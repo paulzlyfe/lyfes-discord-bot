@@ -70,6 +70,8 @@ autoInstallPeers: false
 
 onlyBuiltDependencies:
   - '@swc/core'
+  - '@discordjs/opus'
+  - better-sqlite3
   - esbuild
   - msw
   - unrs-resolver

@@ -1,0 +1,22 @@
+{
+  "name": "@workspace/discord-bot",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --experimental-sqlite --import tsx/esm src/index.ts",
+    "start": "node --experimental-sqlite --import tsx/esm src/index.ts",
+    "deploy-commands": "node --experimental-sqlite --import tsx/esm src/deploy-commands.ts"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.18.0",
+    "discord.js": "^14.18.0",
+    "play-dl": "^1.9.7",
+    "sodium-native": "^4.3.3",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  }
+}
