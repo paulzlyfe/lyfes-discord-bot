@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-const RESET_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
+const RESET_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export interface StreakData {
   currentStreak: number;
@@ -202,10 +202,14 @@ export function useFivemStreaks() {
               sessionJobsCompleted: prevStreak.sessionJobsCompleted + 1,
               lastJob: newState.job,
               lastJobName: newState.job_name || newState.job,
+              // Reset the 24-hour window on every streak increment
+              lastResetTime: Date.now(),
             };
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newData));
             return newData;
           });
+          // Sync the countdown state immediately
+          setTimeUntilReset(RESET_INTERVAL_MS);
         }
 
         return stateChanged ? newState : prev;
