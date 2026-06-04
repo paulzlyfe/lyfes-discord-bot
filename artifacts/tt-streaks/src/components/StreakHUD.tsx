@@ -1,11 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, MapPin, Briefcase, Car, Trophy, Hash, Pin, RotateCcw } from 'lucide-react';
+import { Flame, MapPin, Briefcase, Car, Trophy, Hash, Pin, RotateCcw, Timer } from 'lucide-react';
 import { useFivemStreaks } from '@/hooks/useFivemStreaks';
 import { Button } from '@/components/ui/button';
 
+function formatCountdown(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
 export function StreakHUD() {
-  const { streakData, gameState, milestone, manualReset } = useFivemStreaks();
+  const { streakData, gameState, milestone, manualReset, timeUntilReset } = useFivemStreaks();
+  const isWarning = timeUntilReset <= 60_000; // last 60 seconds
   const [confirmReset, setConfirmReset] = useState(false);
   const [justGotBest, setJustGotBest] = useState(false);
   const prevBest = useRef(streakData.bestStreak);
@@ -39,9 +47,20 @@ export function StreakHUD() {
       {/* Header */}
       <header className="flex items-center justify-between mb-6 pb-2 border-b border-border/50">
         <h1 className="text-sm font-black tracking-widest text-muted-foreground">TRANSPORT TYCOON</h1>
-        {gameState.name && (
-          <div className="text-xs font-bold text-secondary">{gameState.name}</div>
-        )}
+        <div className="flex items-center gap-3">
+          <motion.div
+            animate={isWarning ? { opacity: [1, 0.4, 1] } : {}}
+            transition={{ duration: 0.8, repeat: Infinity }}
+            className={`flex items-center gap-1 text-xs font-bold tabular-nums ${isWarning ? 'text-destructive' : 'text-muted-foreground'}`}
+            data-testid="text-reset-countdown"
+          >
+            <Timer size={11} />
+            {formatCountdown(timeUntilReset)}
+          </motion.div>
+          {gameState.name && (
+            <div className="text-xs font-bold text-secondary">{gameState.name}</div>
+          )}
+        </div>
       </header>
 
       {/* Streak Counter */}

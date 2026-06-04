@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+
+const RESET_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 
 export interface StreakData {
   currentStreak: number;
@@ -8,6 +10,7 @@ export interface StreakData {
   lastJob: string;
   lastJobName: string;
   streakHistory: Array<{ streak: number; timestamp: number; job: string }>;
+  lastResetTime: number;
 }
 
 export interface GameState {
@@ -39,6 +42,7 @@ const defaultStreakData: StreakData = {
   lastJob: '',
   lastJobName: '',
   streakHistory: [],
+  lastResetTime: Date.now(),
 };
 
 const defaultGameState: GameState = {
@@ -66,18 +70,26 @@ export function useFivemStreaks() {
       const item = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (item) {
         const parsed = JSON.parse(item);
-        return { ...defaultStreakData, ...parsed, sessionJobsCompleted: 0 };
+        return {
+          ...defaultStreakData,
+          ...parsed,
+          sessionJobsCompleted: 0,
+          lastResetTime: parsed.lastResetTime ?? Date.now(),
+        };
       }
     } catch (e) {
-      console.error("Error loading streak data", e);
+      // ignore
     }
     return defaultStreakData;
   });
 
   const [gameState, setGameState] = useState<GameState>(defaultGameState);
   const [milestone, setMilestone] = useState<number | null>(null);
+  const [timeUntilReset, setTimeUntilReset] = useState<number>(RESET_INTERVAL_MS);
+  const streakDataRef = useRef(streakData);
+  streakDataRef.current = streakData;
 
-  const resetStreak = useCallback(() => {
+  const resetStreak = useCallback((isTimedReset = false) => {
     setStreakData((prev) => {
       const newHistory = prev.currentStreak > 0
         ? [{ streak: prev.currentStreak, timestamp: Date.now(), job: prev.lastJobName || prev.lastJob }, ...prev.streakHistory].slice(0, 10)
@@ -86,12 +98,41 @@ export function useFivemStreaks() {
       const newData = {
         ...prev,
         currentStreak: 0,
-        streakHistory: newHistory
+        streakHistory: newHistory,
+        lastResetTime: isTimedReset ? Date.now() : prev.lastResetTime,
       };
       
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newData));
       return newData;
     });
+  }, []);
+
+  // 15-minute periodic reset
+  useEffect(() => {
+    const tick = () => {
+      const now = Date.now();
+      const elapsed = now - streakDataRef.current.lastResetTime;
+      const remaining = RESET_INTERVAL_MS - elapsed;
+
+      if (remaining <= 0) {
+        // Time's up — reset streak and start new window
+        setStreakData((prev) => {
+          const newHistory = prev.currentStreak > 0
+            ? [{ streak: prev.currentStreak, timestamp: now, job: prev.lastJobName || prev.lastJob }, ...prev.streakHistory].slice(0, 10)
+            : prev.streakHistory;
+          const newData = { ...prev, currentStreak: 0, streakHistory: newHistory, lastResetTime: now };
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newData));
+          return newData;
+        });
+        setTimeUntilReset(RESET_INTERVAL_MS);
+      } else {
+        setTimeUntilReset(remaining);
+      }
+    };
+
+    const intervalId = setInterval(tick, 1000);
+    tick(); // run immediately on mount
+    return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
@@ -181,7 +222,14 @@ export function useFivemStreaks() {
 
   const manualReset = useCallback(() => {
     resetStreak();
+    // Restart the 15-minute window on manual reset
+    setStreakData((prev) => {
+      const newData = { ...prev, lastResetTime: Date.now() };
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newData));
+      return newData;
+    });
+    setTimeUntilReset(RESET_INTERVAL_MS);
   }, [resetStreak]);
 
-  return { streakData, gameState, milestone, manualReset };
+  return { streakData, gameState, milestone, manualReset, timeUntilReset };
 }
