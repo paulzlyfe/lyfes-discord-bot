@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, MapPin, Briefcase, Car, Trophy, Hash, Pin, RotateCcw, Timer } from 'lucide-react';
+import { Flame, Briefcase, Trophy, Hash, Pin, RotateCcw, Timer } from 'lucide-react';
 import { useFivemStreaks } from '@/hooks/useFivemStreaks';
 import { Button } from '@/components/ui/button';
 
@@ -111,30 +111,17 @@ export function StreakHUD() {
         </motion.div>
       </div>
 
-      {/* Job Info */}
-      <div className="space-y-3 bg-card/40 border border-card-border rounded-lg p-4 mb-6">
-        <div className="flex items-center text-sm font-bold text-secondary truncate">
-          <Briefcase size={16} className="mr-2 shrink-0 opacity-80" />
-          <span className="truncate" data-testid="text-job-name">
-            {gameState.job_name || gameState.job || "No active job"} 
-            {gameState.subjob_name ? ` - ${gameState.subjob_name}` : ""}
+      {/* Current Job */}
+      <div className="bg-card/40 border border-card-border rounded-lg px-4 py-3 mb-6 flex items-center gap-2">
+        <Briefcase size={15} className="shrink-0 text-secondary opacity-80" />
+        <span className="text-sm font-bold text-secondary truncate" data-testid="text-job-name">
+          {gameState.job_name || gameState.job || "No active job"}
+          {gameState.subjob_name ? ` — ${gameState.subjob_name}` : ""}
+        </span>
+        {streakData.currentStreak > 0 && streakData.lastJobName && (
+          <span className="ml-auto text-[10px] font-bold text-primary/70 shrink-0 uppercase tracking-wider">
+            {streakData.lastJobName}
           </span>
-        </div>
-        
-        {(gameState.zoneName || gameState.street) && (
-          <div className="flex items-center text-xs text-muted-foreground truncate">
-            <MapPin size={14} className="mr-2 shrink-0 opacity-70" />
-            <span className="truncate" data-testid="text-location">
-              {gameState.street}{gameState.street && gameState.zoneName ? ", " : ""}{gameState.zoneName}
-            </span>
-          </div>
-        )}
-
-        {gameState.vehicleName && (
-          <div className="flex items-center text-xs text-muted-foreground truncate">
-            <Car size={14} className="mr-2 shrink-0 opacity-70" />
-            <span className="truncate" data-testid="text-vehicle">{gameState.vehicleName}</span>
-          </div>
         )}
       </div>
 
@@ -158,8 +145,9 @@ export function StreakHUD() {
           </div>
           <div className="flex flex-wrap gap-2">
             {streakData.streakHistory.slice(0, 3).map((hist, i) => (
-              <div key={i} className="bg-muted text-muted-foreground text-xs font-bold px-2.5 py-1 rounded-sm flex items-center" data-testid={`badge-recent-streak-${i}`}>
-                x{hist.streak}
+              <div key={i} className="bg-muted text-muted-foreground text-xs font-bold px-2.5 py-1 rounded-sm flex items-center gap-1.5" data-testid={`badge-recent-streak-${i}`}>
+                <span className="text-foreground">x{hist.streak}</span>
+                {hist.job && <span className="text-muted-foreground/60 font-normal truncate max-w-[80px]">{hist.job}</span>}
               </div>
             ))}
           </div>

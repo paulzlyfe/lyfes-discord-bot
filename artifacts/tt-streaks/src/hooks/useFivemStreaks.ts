@@ -24,12 +24,6 @@ export interface GameState {
   name: string;
   user_id: number;
   notification: string;
-  vehicle: string;
-  vehicleName: string;
-  health: number;
-  zone: string;
-  zoneName: string;
-  street: string;
 }
 
 const LOCAL_STORAGE_KEY = 'tt_streak_data';
@@ -56,12 +50,6 @@ const defaultGameState: GameState = {
   name: '',
   user_id: 0,
   notification: '',
-  vehicle: '',
-  vehicleName: '',
-  health: 100,
-  zone: '',
-  zoneName: '',
-  street: '',
 };
 
 export function useFivemStreaks() {
@@ -152,8 +140,8 @@ export function useFivemStreaks() {
         }
 
         const isTransportJob = newState.job && !['unemployed', 'police', 'ambulance', 'mechanic'].includes(newState.job);
-        
-        if (newState.health < 10 || newState.job === 'unemployed' || newState.job === '') {
+
+        if (newState.job === 'unemployed' || newState.job === '') {
           resetStreak();
         }
 
