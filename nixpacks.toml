@@ -1,2 +1,5 @@
+[phases.setup]
+nixPkgs = ["yt-dlp", "ffmpeg"]
+
 [phases.install]
 cmds = ["pnpm install --no-frozen-lockfile"]

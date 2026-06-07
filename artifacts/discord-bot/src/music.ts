@@ -10,6 +10,8 @@ import {
   VoiceConnectionStatus,
 } from "@discordjs/voice";
 import { GuildMember, TextChannel, VoiceChannel } from "discord.js";
+import { spawn } from "child_process";
+import { Readable } from "stream";
 import play from "play-dl";
 
 export interface Track {
@@ -31,6 +33,18 @@ const queues = new Map<string, GuildQueue>();
 
 export function getQueue(guildId: string) {
   return queues.get(guildId);
+}
+
+function ytdlpStream(url: string): Readable {
+  const proc = spawn("yt-dlp", [
+    "-f", "bestaudio[ext=webm]/bestaudio/best",
+    "--no-playlist",
+    "-o", "-",
+    "--quiet",
+    url,
+  ]);
+  proc.stderr.on("data", (d) => process.stderr.write(d));
+  return proc.stdout as unknown as Readable;
 }
 
 export async function joinChannel(member: GuildMember, textChannel: TextChannel) {
@@ -91,10 +105,9 @@ async function playNext(guildId: string) {
 
   const track = queue.tracks[0];
   try {
-    const source = await play.stream(track.url, { quality: 2 });
-
-    const resource = createAudioResource(source.stream, {
-      inputType: source.type as unknown as StreamType,
+    const stream = ytdlpStream(track.url);
+    const resource = createAudioResource(stream, {
+      inputType: StreamType.Arbitrary,
     });
 
     queue.player.play(resource);

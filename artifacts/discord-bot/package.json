@@ -12,6 +12,7 @@
     "@discordjs/voice": "^0.18.0",
     "@distube/ytdl-core": "^4.16.12",
     "discord.js": "^14.18.0",
+    "opusscript": "^0.1.1",
     "pg": "^8.13.3",
     "play-dl": "^1.9.7",
     "sodium-native": "^4.3.3",
