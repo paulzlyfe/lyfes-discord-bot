@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "pnpm install"
+buildCommand = "pnpm install --no-frozen-lockfile"
 
 [deploy]
 startCommand = "cd artifacts/discord-bot && node --import tsx/esm src/index.ts"
