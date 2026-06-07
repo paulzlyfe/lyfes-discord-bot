@@ -45,7 +45,7 @@ const client = new Client({
 
 client.once(Events.ClientReady, (c) => {
   console.log(`✅ Logged in as ${c.user.tag}`);
-  c.user.setActivity("🚛 Transport Tycoon | /help");
+  c.user.setActivity("Hard Knock Lyfe");
 });
 
 client.on(Events.MessageCreate, async (message) => {
