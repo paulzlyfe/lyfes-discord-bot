@@ -11,9 +11,4 @@ paths = ["/discord-bot"]
 run = "pnpm --filter @workspace/discord-bot run start"
 
 [services.production]
-
-[services.production.run]
-args = ["pnpm", "--filter", "@workspace/discord-bot", "run", "start"]
-
-[services.production.health.startup]
-path = "/discord-bot"
+run = "pnpm --filter @workspace/discord-bot run start"
