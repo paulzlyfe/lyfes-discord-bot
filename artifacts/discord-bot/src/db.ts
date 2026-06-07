@@ -8,7 +8,7 @@ fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 export const db = new DatabaseSync(dbPath);
 
 // Migrate existing databases to add new columns safely
-try { db.exec(`ALTER TABLE guild_config ADD COLUMN member_log_channel_id TEXT`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE guild_config ADD COLUMN member_log_channel_id TEXT`); } catch { /* already exists */ }
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS warnings (
@@ -39,6 +39,14 @@ db.exec(`
     banned_words TEXT NOT NULL DEFAULT '[]',
     spam_threshold INTEGER NOT NULL DEFAULT 5,
     spam_window_ms INTEGER NOT NULL DEFAULT 5000
+  );
+
+  CREATE TABLE IF NOT EXISTS streamer_links (
+    guild_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    platform TEXT NOT NULL,
+    url TEXT NOT NULL,
+    PRIMARY KEY (guild_id, user_id)
   );
 `);
 
@@ -105,4 +113,16 @@ export function setBannedWords(guildId: string, words: string[]) {
 
 export function setAutomod(guildId: string, enabled: boolean) {
   db.prepare("UPDATE guild_config SET automod_enabled = ? WHERE guild_id = ?").run(enabled ? 1 : 0, guildId);
+}
+
+export function setStreamerLink(guildId: string, userId: string, platform: "youtube" | "twitch", url: string) {
+  db.prepare(
+    "INSERT INTO streamer_links (guild_id, user_id, platform, url) VALUES (?, ?, ?, ?) ON CONFLICT(guild_id, user_id) DO UPDATE SET platform = excluded.platform, url = excluded.url"
+  ).run(guildId, userId, platform, url);
+}
+
+export function getStreamerLink(guildId: string, userId: string) {
+  return db
+    .prepare("SELECT platform, url FROM streamer_links WHERE guild_id = ? AND user_id = ?")
+    .get(guildId, userId) as { platform: "youtube" | "twitch"; url: string } | undefined;
 }

@@ -10,6 +10,7 @@ import { handleModCommand } from "./commands/moderation.js";
 import { handleMusicCommand, handleSearchSelect } from "./commands/music.js";
 import { handleConfigCommand } from "./commands/config.js";
 import { handleUtilityCommand } from "./commands/utility.js";
+import { handleStreamingCommand } from "./commands/streaming.js";
 import { getGuildConfig } from "./db.js";
 import { stopAndLeave } from "./music.js";
 
@@ -29,6 +30,10 @@ const CONFIG_COMMANDS = new Set([
 
 const UTILITY_COMMANDS = new Set([
   "ping", "userinfo",
+]);
+
+const STREAMING_COMMANDS = new Set([
+  "setstreamer", "golive",
 ]);
 
 const client = new Client({
@@ -75,6 +80,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await handleConfigCommand(interaction);
   } else if (UTILITY_COMMANDS.has(commandName)) {
     await handleUtilityCommand(interaction);
+  } else if (STREAMING_COMMANDS.has(commandName)) {
+    await handleStreamingCommand(interaction);
   }
 });
 
