@@ -236,6 +236,9 @@ importers:
       tweetnacl:
         specifier: ^1.0.3
         version: 1.0.3
+      youtube-sr:
+        specifier: ^4.3.12
+        version: 4.3.12
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -3387,6 +3390,9 @@ packages:
     resolution: {integrity: sha512-CzhO+pFNo8ajLM2d2IW/R93ipy99LWjtwblvC1RsoSUMZgyLbYFr221TnSNT7GjGdYui6P459mw9JH/g/zW2ug==}
     engines: {node: '>=18'}
 
+  youtube-sr@4.3.12:
+    resolution: {integrity: sha512-pAuh5FjCJ6q062lMw6ajr6j9IHKMXk/AZsEo/5xLhJcoO1gN/M2kxwfAwi3d9QLHMPg2DMdBL1DsuWbAsfc5HA==}
+
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
@@ -6109,5 +6115,7 @@ snapshots:
   yocto-queue@1.2.2: {}
 
   yoctocolors@2.1.2: {}
+
+  youtube-sr@4.3.12: {}
 
   zod@3.25.76: {}
