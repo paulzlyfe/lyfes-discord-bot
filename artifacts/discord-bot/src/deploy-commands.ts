@@ -26,6 +26,7 @@ import {
   automodCommand,
   bannedwordsCommand,
   setlogCommand,
+  setmemberlogCommand,
 } from "./commands/config.js";
 import { pingCommand } from "./commands/utility.js";
 
@@ -53,6 +54,7 @@ const commands = [
   volumeCommand,
   searchCommand,
   setlogCommand,
+  setmemberlogCommand,
   automodCommand,
   bannedwordsCommand,
   pingCommand,

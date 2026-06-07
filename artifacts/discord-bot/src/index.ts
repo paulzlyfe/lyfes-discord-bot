@@ -24,7 +24,7 @@ const MUSIC_COMMANDS = new Set([
 ]);
 
 const CONFIG_COMMANDS = new Set([
-  "setlog", "automod", "bannedwords",
+  "setlog", "setmemberlog", "automod", "bannedwords",
 ]);
 
 const UTILITY_COMMANDS = new Set([
@@ -79,6 +79,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {
+  // DM the new member
   try {
     await member.send(
       `👋 Welcome to **${member.guild.name}**, ${member.user.username}!\n\n` +
@@ -87,6 +88,51 @@ client.on(Events.GuildMemberAdd, async (member) => {
     );
   } catch {
     // Member has DMs disabled — silently ignore
+  }
+
+  // Post to member log channel if configured
+  const config = getGuildConfig(member.guild.id);
+  if (config.member_log_channel_id) {
+    const ch = member.guild.channels.cache.get(config.member_log_channel_id);
+    if (ch?.isTextBased()) {
+      const { EmbedBuilder } = await import("discord.js");
+      const embed = new EmbedBuilder()
+        .setColor(0x2ecc71)
+        .setTitle("📥 Member Joined")
+        .setThumbnail(member.user.displayAvatarURL())
+        .addFields(
+          { name: "User", value: `${member.user.tag} (<@${member.id}>)`, inline: true },
+          { name: "Account Created", value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: true },
+          { name: "Total Members", value: `${member.guild.memberCount}`, inline: true }
+        )
+        .setFooter({ text: `ID: ${member.id}` })
+        .setTimestamp();
+      await ch.send({ embeds: [embed] }).catch(() => {});
+    }
+  }
+});
+
+client.on(Events.GuildMemberRemove, async (member) => {
+  const config = getGuildConfig(member.guild.id);
+  if (!config.member_log_channel_id) return;
+
+  const ch = member.guild.channels.cache.get(config.member_log_channel_id);
+  if (ch?.isTextBased()) {
+    const { EmbedBuilder } = await import("discord.js");
+    const embed = new EmbedBuilder()
+      .setColor(0xe74c3c)
+      .setTitle("📤 Member Left")
+      .setThumbnail(member.user.displayAvatarURL())
+      .addFields(
+        { name: "User", value: `${member.user.tag} (<@${member.id}>)`, inline: true },
+        { name: "Joined", value: member.joinedTimestamp
+          ? `<t:${Math.floor(member.joinedTimestamp / 1000)}:R>`
+          : "Unknown", inline: true },
+        { name: "Total Members", value: `${member.guild.memberCount}`, inline: true }
+      )
+      .setFooter({ text: `ID: ${member.id}` })
+      .setTimestamp();
+    await ch.send({ embeds: [embed] }).catch(() => {});
   }
 });
 

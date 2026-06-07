@@ -8,6 +8,7 @@ import {
   setAutomod,
   setBannedWords,
   setLogChannel,
+  setMemberLogChannel,
 } from "../db.js";
 
 export const setlogCommand = new SlashCommandBuilder()
@@ -16,6 +17,14 @@ export const setlogCommand = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .addChannelOption((o) =>
     o.setName("channel").setDescription("Log channel").setRequired(true)
+  );
+
+export const setmemberlogCommand = new SlashCommandBuilder()
+  .setName("setmemberlog")
+  .setDescription("Set the channel where member joins and leaves are logged")
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+  .addChannelOption((o) =>
+    o.setName("channel").setDescription("Member log channel").setRequired(true)
   );
 
 export const automodCommand = new SlashCommandBuilder()
@@ -58,6 +67,11 @@ export async function handleConfigCommand(interaction: ChatInputCommandInteracti
       const channel = interaction.options.getChannel("channel", true);
       setLogChannel(guildId, channel.id);
       await interaction.reply({ content: `✅ Mod logs will be sent to <#${channel.id}>.`, ephemeral: true });
+
+    } else if (cmd === "setmemberlog") {
+      const channel = interaction.options.getChannel("channel", true);
+      setMemberLogChannel(guildId, channel.id);
+      await interaction.reply({ content: `✅ Member join/leave logs will be sent to <#${channel.id}>.`, ephemeral: true });
 
     } else if (cmd === "automod") {
       const enabled = interaction.options.getBoolean("enabled", true);

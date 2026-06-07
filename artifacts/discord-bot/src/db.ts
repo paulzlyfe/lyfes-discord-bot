@@ -7,6 +7,9 @@ fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 export const db = new DatabaseSync(dbPath);
 
+// Migrate existing databases to add new columns safely
+try { db.exec(`ALTER TABLE guild_config ADD COLUMN member_log_channel_id TEXT`); } catch { /* column already exists */ }
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS warnings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,6 +34,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS guild_config (
     guild_id TEXT PRIMARY KEY,
     log_channel_id TEXT,
+    member_log_channel_id TEXT,
     automod_enabled INTEGER NOT NULL DEFAULT 1,
     banned_words TEXT NOT NULL DEFAULT '[]',
     spam_threshold INTEGER NOT NULL DEFAULT 5,
@@ -89,6 +93,10 @@ export function logAction(
   db.prepare(
     "INSERT INTO mod_log (guild_id, action, target_user_id, moderator_id, reason, extra) VALUES (?, ?, ?, ?, ?, ?)"
   ).run(guildId, action, targetUserId, moderatorId, reason ?? null, extra ?? null);
+}
+
+export function setMemberLogChannel(guildId: string, channelId: string) {
+  db.prepare("UPDATE guild_config SET member_log_channel_id = ? WHERE guild_id = ?").run(channelId, guildId);
 }
 
 export function setBannedWords(guildId: string, words: string[]) {
