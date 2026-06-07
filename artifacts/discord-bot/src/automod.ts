@@ -32,7 +32,7 @@ async function deleteAndWarn(
     reason
   );
 
-  const notice = await message.channel
+  const notice = await (message.channel as import("discord.js").TextChannel)
     .send(`${message.author}, ${userNotice}`)
     .catch(() => null);
   if (notice) setTimeout(() => notice.delete().catch(() => {}), 6000);

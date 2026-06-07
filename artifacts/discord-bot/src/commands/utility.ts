@@ -47,7 +47,7 @@ export async function handleUtilityCommand(interaction: ChatInputCommandInteract
       // User not in server — show partial info
     }
 
-    const warnings = getWarnings(interaction.guild.id, target.id);
+    const warnings = await getWarnings(interaction.guild.id, target.id);
     const accountAgeDays = Math.floor((Date.now() - target.createdTimestamp) / 86_400_000);
     const isNewAccount = accountAgeDays < 7;
 

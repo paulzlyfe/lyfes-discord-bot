@@ -10,8 +10,7 @@ import {
   VoiceConnectionStatus,
 } from "@discordjs/voice";
 import { GuildMember, TextChannel, VoiceChannel } from "discord.js";
-import ytdl from "@distube/ytdl-core";
-import YouTube from "youtube-sr";
+import play from "play-dl";
 
 export interface Track {
   title: string;
@@ -49,7 +48,7 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
   let queue = queues.get(voiceChannel.guild.id);
   if (!queue) {
     const player = createAudioPlayer();
-    queue = { tracks: [], player, playing: false, loop: false, textChannel };
+    queue = { tracks: [], player, playing: false, loop: false, volume: 100, textChannel };
     queues.set(voiceChannel.guild.id, queue);
     connection.subscribe(player);
 
@@ -92,14 +91,10 @@ async function playNext(guildId: string) {
 
   const track = queue.tracks[0];
   try {
-    const stream = ytdl(track.url, {
-      filter: "audioonly",
-      quality: "highestaudio",
-      highWaterMark: 1 << 25,
-    });
+    const source = await play.stream(track.url, { quality: 2 });
 
-    const resource = createAudioResource(stream, {
-      inputType: StreamType.Arbitrary,
+    const resource = createAudioResource(source.stream, {
+      inputType: source.type as unknown as StreamType,
     });
 
     queue.player.play(resource);
@@ -127,19 +122,19 @@ export async function addTrack(
 
   const isUrl = query.startsWith("http://") || query.startsWith("https://");
 
-  if (isUrl && ytdl.validateURL(query)) {
-    const info = await ytdl.getInfo(query);
+  if (isUrl) {
+    const info = await play.video_info(query);
     track = {
-      title: info.videoDetails.title,
-      url: info.videoDetails.video_url,
+      title: info.video_details.title ?? "Unknown",
+      url: info.video_details.url,
       requestedBy,
     };
   } else {
-    const result = await YouTube.searchOne(query);
-    if (!result) throw new Error("No results found for that search.");
+    const results = await play.search(query, { source: { youtube: "video" }, limit: 1 });
+    if (!results.length) throw new Error("No results found for that search.");
     track = {
-      title: result.title ?? "Unknown",
-      url: result.url,
+      title: results[0].title ?? "Unknown",
+      url: results[0].url,
       requestedBy,
     };
   }
