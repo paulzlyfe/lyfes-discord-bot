@@ -3,15 +3,12 @@ previewPath = "/discord-bot"
 title = "Discord Bot"
 
 [[services]]
+localPort = 3000
 name = "Discord Bot"
 paths = ["/discord-bot"]
-localPort = 3000
 
 [services.development]
 run = "pnpm --filter @workspace/discord-bot run start"
-
-[services.env]
-PORT = "3000"
 
 [services.production]
 
