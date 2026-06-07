@@ -28,7 +28,7 @@ import {
   setlogCommand,
   setmemberlogCommand,
 } from "./commands/config.js";
-import { pingCommand } from "./commands/utility.js";
+import { pingCommand, userinfoCommand } from "./commands/utility.js";
 
 const token = process.env.DISCORD_BOT_TOKEN!;
 const clientId = process.env.DISCORD_CLIENT_ID!;
@@ -58,6 +58,7 @@ const commands = [
   automodCommand,
   bannedwordsCommand,
   pingCommand,
+  userinfoCommand,
 ].map((c) => c.toJSON());
 
 const rest = new REST().setToken(token);

@@ -28,7 +28,7 @@ const CONFIG_COMMANDS = new Set([
 ]);
 
 const UTILITY_COMMANDS = new Set([
-  "ping",
+  "ping", "userinfo",
 ]);
 
 const client = new Client({
@@ -79,6 +79,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {
+  const accountAgeDays = (Date.now() - member.user.createdTimestamp) / 86_400_000;
+  const isNewAccount = accountAgeDays < 7;
+
   // DM the new member
   try {
     await member.send(
@@ -90,24 +93,48 @@ client.on(Events.GuildMemberAdd, async (member) => {
     // Member has DMs disabled — silently ignore
   }
 
+  // Auto-timeout accounts younger than 1 week
+  if (isNewAccount) {
+    try {
+      await member.timeout(6 * 60 * 60 * 1000, "Account younger than 1 week — pending owner review");
+    } catch {
+      // Missing permission — skip silently
+    }
+  }
+
   // Post to member log channel if configured
   const config = getGuildConfig(member.guild.id);
   if (config.member_log_channel_id) {
     const ch = member.guild.channels.cache.get(config.member_log_channel_id);
     if (ch?.isTextBased()) {
       const { EmbedBuilder } = await import("discord.js");
+
       const embed = new EmbedBuilder()
-        .setColor(0x2ecc71)
-        .setTitle("📥 Member Joined")
+        .setColor(isNewAccount ? 0xe67e22 : 0x2ecc71)
+        .setTitle(isNewAccount ? "⚠️ New Account Joined — Auto-Muted" : "📥 Member Joined")
         .setThumbnail(member.user.displayAvatarURL())
         .addFields(
           { name: "User", value: `${member.user.tag} (<@${member.id}>)`, inline: true },
-          { name: "Account Created", value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: true },
-          { name: "Total Members", value: `${member.guild.memberCount}`, inline: true }
+          { name: "Account Age", value: `${Math.floor(accountAgeDays)} days`, inline: true },
+          { name: "Total Members", value: `${member.guild.memberCount}`, inline: true },
+          ...(isNewAccount ? [{ name: "Action", value: "Timed out for 6 hours — please review", inline: false }] : [])
         )
         .setFooter({ text: `ID: ${member.id}` })
         .setTimestamp();
-      await ch.send({ embeds: [embed] }).catch(() => {});
+
+      // Ping the Owner role if it exists, otherwise ping the guild owner
+      let ping = `<@${member.guild.ownerId}>`;
+      if (isNewAccount) {
+        const ownerRole = member.guild.roles.cache.find(
+          (r) => r.name.toLowerCase() === "owner" || r.name.toLowerCase() === "owners"
+        );
+        if (ownerRole) ping = `<@&${ownerRole.id}>`;
+      }
+
+      await ch.send({
+        content: isNewAccount ? `${ping} — suspicious new account joined and has been auto-muted.` : undefined,
+        embeds: [embed],
+      }).catch(() => {});
     }
   }
 });
