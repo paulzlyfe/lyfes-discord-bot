@@ -2,7 +2,6 @@ kind = "api"
 previewPath = "/discord-bot"
 title = "Discord Bot"
 version = "1.0.0"
-id = "artifacts/discord-bot"
 
 [[services]]
 name = "Discord Bot"
