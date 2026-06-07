@@ -19,12 +19,14 @@ import {
   resumeCommand,
   skipCommand,
   stopCommand,
+  volumeCommand,
 } from "./commands/music.js";
 import {
   automodCommand,
   bannedwordsCommand,
   setlogCommand,
 } from "./commands/config.js";
+import { pingCommand } from "./commands/utility.js";
 
 const token = process.env.DISCORD_BOT_TOKEN!;
 const clientId = process.env.DISCORD_CLIENT_ID!;
@@ -47,9 +49,11 @@ const commands = [
   queueCommand,
   loopCommand,
   nowPlayingCommand,
+  volumeCommand,
   setlogCommand,
   automodCommand,
   bannedwordsCommand,
+  pingCommand,
 ].map((c) => c.toJSON());
 
 const rest = new REST().setToken(token);

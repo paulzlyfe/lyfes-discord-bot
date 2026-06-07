@@ -12,6 +12,7 @@ import {
   pauseTrack,
   resumeTrack,
   setLoop,
+  setVolume,
   skipTrack,
   stopAndLeave,
 } from "../music.js";
@@ -50,6 +51,13 @@ export const loopCommand = new SlashCommandBuilder()
 export const nowPlayingCommand = new SlashCommandBuilder()
   .setName("nowplaying")
   .setDescription("Show what's currently playing");
+
+export const volumeCommand = new SlashCommandBuilder()
+  .setName("volume")
+  .setDescription("Set the music volume (0–100)")
+  .addIntegerOption((o) =>
+    o.setName("level").setDescription("Volume level (0–100)").setRequired(true).setMinValue(0).setMaxValue(100)
+  );
 
 export async function handleMusicCommand(interaction: ChatInputCommandInteraction) {
   if (!interaction.guild) {
@@ -139,9 +147,15 @@ export async function handleMusicCommand(interaction: ChatInputCommandInteractio
         .setDescription(`**${track.title}**`)
         .addFields(
           { name: "Requested by", value: track.requestedBy, inline: true },
-          { name: "Loop", value: q.loop ? "ON" : "OFF", inline: true }
+          { name: "Loop", value: q.loop ? "ON" : "OFF", inline: true },
+          { name: "Volume", value: `${q.volume}%`, inline: true }
         );
       await interaction.reply({ embeds: [embed] });
+
+    } else if (cmd === "volume") {
+      const level = interaction.options.getInteger("level", true);
+      setVolume(guildId, level);
+      await interaction.reply({ content: `🔊 Volume set to **${level}%**.`, ephemeral: true });
     }
   } catch (err: any) {
     const msg = `❌ ${err.message}`;

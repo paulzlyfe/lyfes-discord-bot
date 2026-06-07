@@ -8,6 +8,7 @@ import { runAutomod } from "./automod.js";
 import { handleModCommand } from "./commands/moderation.js";
 import { handleMusicCommand } from "./commands/music.js";
 import { handleConfigCommand } from "./commands/config.js";
+import { handleUtilityCommand } from "./commands/utility.js";
 import { getGuildConfig } from "./db.js";
 import { stopAndLeave } from "./music.js";
 
@@ -18,11 +19,15 @@ const MOD_COMMANDS = new Set([
 
 const MUSIC_COMMANDS = new Set([
   "play", "skip", "stop", "pause", "resume",
-  "queue", "loop", "nowplaying",
+  "queue", "loop", "nowplaying", "volume",
 ]);
 
 const CONFIG_COMMANDS = new Set([
   "setlog", "automod", "bannedwords",
+]);
+
+const UTILITY_COMMANDS = new Set([
+  "ping",
 ]);
 
 const client = new Client({
@@ -59,6 +64,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await handleMusicCommand(interaction);
   } else if (CONFIG_COMMANDS.has(commandName)) {
     await handleConfigCommand(interaction);
+  } else if (UTILITY_COMMANDS.has(commandName)) {
+    await handleUtilityCommand(interaction);
   }
 });
 

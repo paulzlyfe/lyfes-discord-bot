@@ -24,6 +24,7 @@ interface GuildQueue {
   player: AudioPlayer;
   playing: boolean;
   loop: boolean;
+  volume: number;
   textChannel: TextChannel;
 }
 
@@ -186,4 +187,11 @@ export function setLoop(guildId: string, enabled: boolean) {
   const queue = queues.get(guildId);
   if (!queue) throw new Error("Nothing is playing.");
   queue.loop = enabled;
+}
+
+export function setVolume(guildId: string, volume: number) {
+  const queue = queues.get(guildId);
+  if (!queue) throw new Error("Nothing is playing.");
+  if (volume < 0 || volume > 100) throw new Error("Volume must be between 0 and 100.");
+  queue.volume = volume;
 }
