@@ -13,6 +13,7 @@ import { handleUtilityCommand } from "./commands/utility.js";
 import { handleStreamingCommand } from "./commands/streaming.js";
 import { getGuildConfig } from "./db.js";
 import { stopAndLeave } from "./music.js";
+import { startLivePoll } from "./live-poll.js";
 
 const MOD_COMMANDS = new Set([
   "ban", "unban", "kick", "timeout", "untimeout",
@@ -51,6 +52,7 @@ const client = new Client({
 client.once(Events.ClientReady, (c) => {
   console.log(`✅ Logged in as ${c.user.tag}`);
   c.user.setActivity("Hard Knock Lyfe");
+  startLivePoll(c);
 });
 
 client.on(Events.MessageCreate, async (message) => {

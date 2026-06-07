@@ -126,3 +126,9 @@ export function getStreamerLink(guildId: string, userId: string) {
     .prepare("SELECT platform, url FROM streamer_links WHERE guild_id = ? AND user_id = ?")
     .get(guildId, userId) as { platform: "youtube" | "twitch"; url: string } | undefined;
 }
+
+export function getAllStreamerLinks() {
+  return db
+    .prepare("SELECT guild_id, user_id, platform, url FROM streamer_links")
+    .all() as Array<{ guild_id: string; user_id: string; platform: "youtube" | "twitch"; url: string }>;
+}
