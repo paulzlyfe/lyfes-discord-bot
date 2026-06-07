@@ -11,4 +11,12 @@ paths = ["/discord-bot"]
 run = "pnpm --filter @workspace/discord-bot run start"
 
 [services.production]
-run = "pnpm --filter @workspace/discord-bot run start"
+
+[services.production.build]
+args = ["pnpm", "install", "--frozen-lockfile"]
+
+[services.production.run]
+args = ["node", "--experimental-sqlite", "--import", "tsx/esm", "artifacts/discord-bot/src/index.ts"]
+
+[services.production.health.startup]
+path = "/discord-bot"

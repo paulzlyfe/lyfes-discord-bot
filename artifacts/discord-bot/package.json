@@ -14,11 +14,11 @@
     "discord.js": "^14.18.0",
     "play-dl": "^1.9.7",
     "sodium-native": "^4.3.3",
+    "tsx": "catalog:",
     "tweetnacl": "^1.0.3",
     "youtube-sr": "^4.3.12"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
-    "tsx": "catalog:"
+    "@types/node": "catalog:"
   }
 }
