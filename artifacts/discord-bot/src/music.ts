@@ -10,9 +10,11 @@ import {
   VoiceConnectionStatus,
 } from "@discordjs/voice";
 import { GuildMember, TextChannel, VoiceChannel } from "discord.js";
-import { spawn } from "child_process";
+import { spawn, execFile } from "child_process";
+import { promisify } from "util";
 import { Readable } from "stream";
-import play from "play-dl";
+
+const execFileAsync = promisify(execFile);
 
 export interface Track {
   title: string;
@@ -35,6 +37,22 @@ export function getQueue(guildId: string) {
   return queues.get(guildId);
 }
 
+async function getVideoInfo(query: string): Promise<{ title: string; url: string }> {
+  const isUrl = query.startsWith("http://") || query.startsWith("https://");
+  const args = [
+    "--no-playlist",
+    "--print", "%(title)s\n%(webpage_url)s",
+    "--quiet",
+    isUrl ? query : `ytsearch1:${query}`,
+  ];
+  const { stdout } = await execFileAsync("yt-dlp", args, { timeout: 20_000 });
+  const lines = stdout.trim().split("\n");
+  return {
+    title: lines[0] ?? "Unknown",
+    url: lines[1] ?? query,
+  };
+}
+
 function ytdlpStream(url: string): Readable {
   const proc = spawn("yt-dlp", [
     "-f", "bestaudio[ext=webm]/bestaudio/best",
@@ -43,7 +61,7 @@ function ytdlpStream(url: string): Readable {
     "--quiet",
     url,
   ]);
-  proc.stderr.on("data", (d) => process.stderr.write(d));
+  proc.stderr.on("data", (d: Buffer) => process.stderr.write(d));
   return proc.stdout as unknown as Readable;
 }
 
@@ -59,7 +77,7 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
     selfMute: false,
   });
 
-  await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
+  await entersState(connection, VoiceConnectionStatus.Ready, 15_000);
 
   let queue = queues.get(voiceChannel.guild.id);
   if (!queue) {
@@ -118,6 +136,7 @@ async function playNext(guildId: string) {
       .send(`🎵 Now playing: **${track.title}** (requested by ${track.requestedBy})`)
       .catch(() => {});
   } catch (err: any) {
+    console.error("playNext error:", err);
     queue.textChannel.send(`❌ Failed to play **${track.title}**: ${err.message}`).catch(() => {});
     queue.tracks.shift();
     if (queue.tracks.length > 0) playNext(guildId);
@@ -133,26 +152,8 @@ export async function addTrack(
   const queue = queues.get(guildId);
   if (!queue) throw new Error("Not connected to a voice channel.");
 
-  let track: Track;
-
-  const isUrl = query.startsWith("http://") || query.startsWith("https://");
-
-  if (isUrl) {
-    const info = await play.video_info(query);
-    track = {
-      title: info.video_details.title ?? "Unknown",
-      url: info.video_details.url,
-      requestedBy,
-    };
-  } else {
-    const results = await play.search(query, { source: { youtube: "video" }, limit: 1 });
-    if (!results.length) throw new Error("No results found for that search.");
-    track = {
-      title: results[0].title ?? "Unknown",
-      url: results[0].url,
-      requestedBy,
-    };
-  }
+  const info = await getVideoInfo(query);
+  const track: Track = { ...info, requestedBy };
 
   queue.tracks.push(track);
 
