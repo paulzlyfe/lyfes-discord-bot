@@ -4,6 +4,7 @@ import {
   Partials,
   Events,
 } from "discord.js";
+import { createServer } from "node:http";
 import { runAutomod } from "./automod.js";
 import { handleModCommand } from "./commands/moderation.js";
 import { handleMusicCommand } from "./commands/music.js";
@@ -90,5 +91,14 @@ if (!token) {
   console.error("❌ DISCORD_BOT_TOKEN is not set.");
   process.exit(1);
 }
+
+// Health-check server so UptimeRobot can keep the bot awake
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ status: "ok", bot: client.user?.tag ?? "connecting" }));
+}).listen(PORT, () => {
+  console.log(`🌐 Health-check server listening on port ${PORT}`);
+});
 
 client.login(token);

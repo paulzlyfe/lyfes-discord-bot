@@ -1,0 +1,17 @@
+kind = "api"
+previewPath = "/bot-health"
+title = "Discord Bot"
+version = "1.0.0"
+id = "artifacts/discord-bot"
+router = "path"
+
+[[services]]
+name = "bot"
+paths = [ "/bot-health" ]
+localPort = 3456
+
+[services.development]
+run = "pnpm --filter @workspace/discord-bot run start"
+
+[services.env]
+PORT = "3456"
