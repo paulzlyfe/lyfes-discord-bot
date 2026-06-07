@@ -78,6 +78,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
+client.on(Events.GuildMemberAdd, async (member) => {
+  try {
+    await member.send(
+      `👋 Welcome to **${member.guild.name}**, ${member.user.username}!\n\n` +
+      `Please take a moment to read our rules before chatting: <#1506444500350796019>\n\n` +
+      `Hope you enjoy your stay! 🎉`
+    );
+  } catch {
+    // Member has DMs disabled — silently ignore
+  }
+});
+
 client.on(Events.GuildCreate, (guild) => {
   console.log(`Joined guild: ${guild.name} (${guild.id})`);
   getGuildConfig(guild.id);
