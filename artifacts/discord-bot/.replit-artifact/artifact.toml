@@ -1,0 +1,17 @@
+kind = "api"
+previewPath = "/discord-bot"
+title = "Discord Bot"
+
+[[services]]
+localPort = 3000
+name = "Discord Bot"
+paths = ["/discord-bot"]
+
+[services.development]
+run = "pnpm --filter @workspace/discord-bot run start"
+
+[services.production]
+run = "cd artifacts/discord-bot && node --experimental-sqlite --import tsx/esm src/index.ts"
+
+[services.production.build]
+args = ["pnpm", "install"]
