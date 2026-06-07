@@ -15,9 +15,5 @@ run = "pnpm --filter @workspace/discord-bot run start"
 [services.production.run]
 args = ["pnpm", "--filter", "@workspace/discord-bot", "run", "start"]
 
-[services.production.run.env]
-PORT = "3000"
-NODE_ENV = "production"
-
 [services.production.health.startup]
 path = "/discord-bot"
