@@ -34,7 +34,7 @@ const UTILITY_COMMANDS = new Set([
 ]);
 
 const STREAMING_COMMANDS = new Set([
-  "setstreamer", "golive", "offair",
+  "setstreamer", "golive", "offair", "removestreamer",
 ]);
 
 const client = new Client({

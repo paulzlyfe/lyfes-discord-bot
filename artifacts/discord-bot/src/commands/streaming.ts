@@ -6,7 +6,7 @@ import {
   SlashCommandBuilder,
   TextChannel,
 } from "discord.js";
-import { getStreamerLink, setStreamerLink } from "../db.js";
+import { getStreamerLink, setStreamerLink, removeStreamerLink } from "../db.js";
 
 const STREAMER_ROLE_ID = "1513109334861807647";
 const STREAM_ALERT_CHANNEL_ID = "1513110104482779276";
@@ -45,6 +45,10 @@ export const offairCommand = new SlashCommandBuilder()
   .addStringOption((o) =>
     o.setName("message").setDescription("Optional goodbye message for your viewers").setRequired(false)
   );
+
+export const removestreamerCommand = new SlashCommandBuilder()
+  .setName("removestreamer")
+  .setDescription("Remove your linked channel (stops auto alerts and the /golive command)");
 
 export async function handleStreamingCommand(interaction: ChatInputCommandInteraction) {
   if (!interaction.guild) {
@@ -139,6 +143,18 @@ export async function handleStreamingCommand(interaction: ChatInputCommandIntera
 
       await alertChannel.send({ embeds: [embed] });
       await interaction.reply({ content: `✅ Stream ended message posted in <#${STREAM_ALERT_CHANNEL_ID}>!`, ephemeral: true });
+
+    } else if (cmd === "removestreamer") {
+      const existing = getStreamerLink(interaction.guild.id, interaction.user.id);
+      if (!existing) {
+        await interaction.reply({ content: "❌ You don't have a linked channel to remove.", ephemeral: true });
+        return;
+      }
+      removeStreamerLink(interaction.guild.id, interaction.user.id);
+      await interaction.reply({
+        content: `✅ Your linked **${existing.platform}** channel has been removed. Auto alerts and \`/golive\` will no longer work for you until you run \`/setstreamer\` again.`,
+        ephemeral: true,
+      });
     }
   } catch (err: any) {
     const msg = `❌ ${err.message}`;
