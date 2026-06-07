@@ -39,6 +39,13 @@ export const goliveCommand = new SlashCommandBuilder()
   .setName("golive")
   .setDescription("Announce that you are live — posts to the stream alert channel with @everyone");
 
+export const offairCommand = new SlashCommandBuilder()
+  .setName("offair")
+  .setDescription("Post a stream ended message to the stream alert channel")
+  .addStringOption((o) =>
+    o.setName("message").setDescription("Optional goodbye message for your viewers").setRequired(false)
+  );
+
 export async function handleStreamingCommand(interaction: ChatInputCommandInteraction) {
   if (!interaction.guild) {
     await interaction.reply({ content: "Must be used in a server.", ephemeral: true });
@@ -104,6 +111,34 @@ export async function handleStreamingCommand(interaction: ChatInputCommandIntera
 
       await alertChannel.send({ content: "@everyone", embeds: [embed] });
       await interaction.reply({ content: `✅ Your stream has been announced in <#${STREAM_ALERT_CHANNEL_ID}>!`, ephemeral: true });
+
+    } else if (cmd === "offair") {
+      const link = getStreamerLink(interaction.guild.id, interaction.user.id);
+      const customMessage = interaction.options.getString("message");
+
+      const alertChannel = interaction.guild.channels.cache.get(STREAM_ALERT_CHANNEL_ID) as TextChannel | undefined;
+      if (!alertChannel) {
+        await interaction.reply({ content: "❌ Stream alert channel not found.", ephemeral: true });
+        return;
+      }
+
+      const platformLabel = link ? (link.platform === "youtube" ? "YouTube 🎬" : "Twitch 🟣") : "their stream";
+      const watchAgainLine = link ? `\n\n🔗 **Catch the VOD:** ${link.url}` : "";
+
+      const embed = new EmbedBuilder()
+        .setColor(0x36393f)
+        .setTitle(`⬛ ${interaction.user.username} is now offline`)
+        .setDescription(
+          `**${interaction.user.username}** has ended their ${platformLabel} stream. Thanks everyone for watching!` +
+          (customMessage ? `\n\n💬 *"${customMessage}"*` : "") +
+          watchAgainLine
+        )
+        .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
+        .setFooter({ text: "See you next time!" })
+        .setTimestamp();
+
+      await alertChannel.send({ embeds: [embed] });
+      await interaction.reply({ content: `✅ Stream ended message posted in <#${STREAM_ALERT_CHANNEL_ID}>!`, ephemeral: true });
     }
   } catch (err: any) {
     const msg = `❌ ${err.message}`;
