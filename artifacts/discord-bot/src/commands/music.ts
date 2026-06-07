@@ -1,10 +1,14 @@
 import {
+  ActionRowBuilder,
   ChatInputCommandInteraction,
   GuildMember,
   EmbedBuilder,
   SlashCommandBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuInteraction,
   TextChannel,
 } from "discord.js";
+import YouTube from "youtube-sr";
 import {
   addTrack,
   getQueue,
@@ -58,6 +62,41 @@ export const volumeCommand = new SlashCommandBuilder()
   .addIntegerOption((o) =>
     o.setName("level").setDescription("Volume level (0–100)").setRequired(true).setMinValue(0).setMaxValue(100)
   );
+
+export const searchCommand = new SlashCommandBuilder()
+  .setName("search")
+  .setDescription("Search YouTube and pick a song to play")
+  .addStringOption((o) =>
+    o.setName("query").setDescription("Song or artist name").setRequired(true)
+  );
+
+export async function handleSearchSelect(interaction: StringSelectMenuInteraction) {
+  const url = interaction.values[0];
+  const guildId = interaction.guildId!;
+  const member = interaction.member as GuildMember;
+
+  await interaction.deferUpdate();
+
+  try {
+    const queue = await joinChannel(member, interaction.channel as TextChannel);
+    const track = await addTrack(guildId, url, member.user.tag);
+    const q = getQueue(guildId)!;
+    const isNowPlaying = q.tracks[0]?.url === track.url && q.tracks.length === 1;
+
+    const embed = new EmbedBuilder()
+      .setColor(0x1db954)
+      .setTitle(isNowPlaying ? "▶️ Now Playing" : "➕ Added to Queue")
+      .setDescription(`**${track.title}**`)
+      .addFields(
+        { name: "Requested by", value: track.requestedBy, inline: true },
+        { name: "Position", value: isNowPlaying ? "Now" : `#${q.tracks.length}`, inline: true }
+      );
+
+    await interaction.editReply({ embeds: [embed], components: [] });
+  } catch (err: any) {
+    await interaction.editReply({ content: `❌ ${err.message}`, components: [] }).catch(() => {});
+  }
+}
 
 export async function handleMusicCommand(interaction: ChatInputCommandInteraction) {
   if (!interaction.guild) {
@@ -156,6 +195,47 @@ export async function handleMusicCommand(interaction: ChatInputCommandInteractio
       const level = interaction.options.getInteger("level", true);
       setVolume(guildId, level);
       await interaction.reply({ content: `🔊 Volume set to **${level}%**.`, ephemeral: true });
+
+    } else if (cmd === "search") {
+      const query = interaction.options.getString("query", true);
+      await interaction.deferReply();
+
+      const results = await YouTube.search(query, { type: "video", limit: 5 });
+      if (!results.length) {
+        await interaction.editReply({ content: "❌ No results found." });
+        return;
+      }
+
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId(`search_select:${interaction.user.id}`)
+        .setPlaceholder("Pick a song to play…")
+        .addOptions(
+          results.map((r, i) => ({
+            label: (r.title ?? "Unknown").slice(0, 100),
+            description: `${r.channel?.name ?? "Unknown"} • ${r.durationFormatted ?? "?"}`,
+            value: r.url,
+            emoji: ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"][i],
+          }))
+        );
+
+      const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu);
+
+      const embed = new EmbedBuilder()
+        .setColor(0x1db954)
+        .setTitle(`🔍 Search results for "${query}"`)
+        .setDescription(
+          results
+            .map((r, i) => `${["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣"][i]} **${r.title}** — ${r.channel?.name ?? "?"} \`${r.durationFormatted ?? "?"}\``)
+            .join("\n")
+        )
+        .setFooter({ text: "Select a song below • expires in 30s" });
+
+      await interaction.editReply({ embeds: [embed], components: [row] });
+
+      // Disable the menu after 30 seconds
+      setTimeout(async () => {
+        await interaction.editReply({ components: [] }).catch(() => {});
+      }, 30_000);
     }
   } catch (err: any) {
     const msg = `❌ ${err.message}`;

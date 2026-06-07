@@ -7,7 +7,7 @@ import {
 import { createServer } from "node:http";
 import { runAutomod } from "./automod.js";
 import { handleModCommand } from "./commands/moderation.js";
-import { handleMusicCommand } from "./commands/music.js";
+import { handleMusicCommand, handleSearchSelect } from "./commands/music.js";
 import { handleConfigCommand } from "./commands/config.js";
 import { handleUtilityCommand } from "./commands/utility.js";
 import { getGuildConfig } from "./db.js";
@@ -20,7 +20,7 @@ const MOD_COMMANDS = new Set([
 
 const MUSIC_COMMANDS = new Set([
   "play", "skip", "stop", "pause", "resume",
-  "queue", "loop", "nowplaying", "volume",
+  "queue", "loop", "nowplaying", "volume", "search",
 ]);
 
 const CONFIG_COMMANDS = new Set([
@@ -55,6 +55,14 @@ client.on(Events.MessageCreate, async (message) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+  // Handle search result dropdown picks
+  if (interaction.isStringSelectMenu()) {
+    if (interaction.customId.startsWith("search_select:")) {
+      await handleSearchSelect(interaction);
+    }
+    return;
+  }
+
   if (!interaction.isChatInputCommand()) return;
 
   const { commandName } = interaction;
