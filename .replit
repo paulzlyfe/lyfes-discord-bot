@@ -26,7 +26,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd artifacts/discord-bot && node --experimental-sqlite --import tsx/esm src/index.ts"
+args = "cd artifacts/discord-bot && node --import tsx/esm src/index.ts"
 
 [agent]
 stack = "PNPM_WORKSPACE"

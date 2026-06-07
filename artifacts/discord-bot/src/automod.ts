@@ -18,13 +18,13 @@ async function deleteAndWarn(
     await message.delete();
   } catch {}
 
-  addWarning(
+  await addWarning(
     message.guild!.id,
     message.author.id,
     message.client.user!.id,
     reason
   );
-  logAction(
+  await logAction(
     message.guild!.id,
     action,
     message.author.id,
@@ -41,7 +41,7 @@ async function deleteAndWarn(
 export async function runAutomod(message: Message) {
   if (!message.guild || message.author.bot) return;
 
-  const config = getGuildConfig(message.guild.id);
+  const config = await getGuildConfig(message.guild.id);
   if (!config.automod_enabled) return;
 
   // Lucky Ones role is exempt from all automod
@@ -98,7 +98,7 @@ export async function runAutomod(message: Message) {
       spamTracker.delete(key);
       try {
         await member?.timeout(60_000, "AutoMod: Spam detected");
-        logAction(
+        await logAction(
           message.guild.id,
           "AUTOMOD_TIMEOUT",
           message.author.id,

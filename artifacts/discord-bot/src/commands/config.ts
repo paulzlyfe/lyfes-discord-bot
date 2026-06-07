@@ -65,22 +65,22 @@ export async function handleConfigCommand(interaction: ChatInputCommandInteracti
   try {
     if (cmd === "setlog") {
       const channel = interaction.options.getChannel("channel", true);
-      setLogChannel(guildId, channel.id);
+      await setLogChannel(guildId, channel.id);
       await interaction.reply({ content: `✅ Mod logs will be sent to <#${channel.id}>.`, ephemeral: true });
 
     } else if (cmd === "setmemberlog") {
       const channel = interaction.options.getChannel("channel", true);
-      setMemberLogChannel(guildId, channel.id);
+      await setMemberLogChannel(guildId, channel.id);
       await interaction.reply({ content: `✅ Member join/leave logs will be sent to <#${channel.id}>.`, ephemeral: true });
 
     } else if (cmd === "automod") {
       const enabled = interaction.options.getBoolean("enabled", true);
-      setAutomod(guildId, enabled);
+      await setAutomod(guildId, enabled);
       await interaction.reply({ content: `✅ AutoMod is now **${enabled ? "enabled" : "disabled"}**.`, ephemeral: true });
 
     } else if (cmd === "bannedwords") {
       const sub = interaction.options.getSubcommand();
-      const config = getGuildConfig(guildId);
+      const config = await getGuildConfig(guildId);
       const words: string[] = config.banned_words;
 
       if (sub === "list") {
@@ -91,12 +91,12 @@ export async function handleConfigCommand(interaction: ChatInputCommandInteracti
       } else if (sub === "add") {
         const word = interaction.options.getString("word", true).toLowerCase();
         if (!words.includes(word)) words.push(word);
-        setBannedWords(guildId, words);
+        await setBannedWords(guildId, words);
         await interaction.reply({ content: `✅ Added \`${word}\` to the banned words list.`, ephemeral: true });
       } else if (sub === "remove") {
         const word = interaction.options.getString("word", true).toLowerCase();
         const filtered = words.filter((w) => w !== word);
-        setBannedWords(guildId, filtered);
+        await setBannedWords(guildId, filtered);
         await interaction.reply({ content: `✅ Removed \`${word}\` from the banned words list.`, ephemeral: true });
       }
     }

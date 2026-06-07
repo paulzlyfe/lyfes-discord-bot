@@ -77,7 +77,7 @@ export async function handleStreamingCommand(interaction: ChatInputCommandIntera
         return;
       }
 
-      setStreamerLink(interaction.guild.id, interaction.user.id, platform, url);
+      await setStreamerLink(interaction.guild.id, interaction.user.id, platform, url);
 
       const platformLabel = platform === "youtube" ? "YouTube 🎬" : "Twitch 🟣";
       await interaction.reply({
@@ -86,7 +86,7 @@ export async function handleStreamingCommand(interaction: ChatInputCommandIntera
       });
 
     } else if (cmd === "golive") {
-      const link = getStreamerLink(interaction.guild.id, interaction.user.id);
+      const link = await getStreamerLink(interaction.guild.id, interaction.user.id);
 
       if (!link) {
         await interaction.reply({
@@ -117,7 +117,7 @@ export async function handleStreamingCommand(interaction: ChatInputCommandIntera
       await interaction.reply({ content: `✅ Your stream has been announced in <#${STREAM_ALERT_CHANNEL_ID}>!`, ephemeral: true });
 
     } else if (cmd === "offair") {
-      const link = getStreamerLink(interaction.guild.id, interaction.user.id);
+      const link = await getStreamerLink(interaction.guild.id, interaction.user.id);
       const customMessage = interaction.options.getString("message");
 
       const alertChannel = interaction.guild.channels.cache.get(STREAM_ALERT_CHANNEL_ID) as TextChannel | undefined;
@@ -145,12 +145,12 @@ export async function handleStreamingCommand(interaction: ChatInputCommandIntera
       await interaction.reply({ content: `✅ Stream ended message posted in <#${STREAM_ALERT_CHANNEL_ID}>!`, ephemeral: true });
 
     } else if (cmd === "removestreamer") {
-      const existing = getStreamerLink(interaction.guild.id, interaction.user.id);
+      const existing = await getStreamerLink(interaction.guild.id, interaction.user.id);
       if (!existing) {
         await interaction.reply({ content: "❌ You don't have a linked channel to remove.", ephemeral: true });
         return;
       }
-      removeStreamerLink(interaction.guild.id, interaction.user.id);
+      await removeStreamerLink(interaction.guild.id, interaction.user.id);
       await interaction.reply({
         content: `✅ Your linked **${existing.platform}** channel has been removed. Auto alerts and \`/golive\` will no longer work for you until you run \`/setstreamer\` again.`,
         ephemeral: true,

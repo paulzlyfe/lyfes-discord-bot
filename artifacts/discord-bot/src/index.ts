@@ -11,7 +11,7 @@ import { handleMusicCommand, handleSearchSelect } from "./commands/music.js";
 import { handleConfigCommand } from "./commands/config.js";
 import { handleUtilityCommand } from "./commands/utility.js";
 import { handleStreamingCommand } from "./commands/streaming.js";
-import { getGuildConfig } from "./db.js";
+import { initDb, getGuildConfig } from "./db.js";
 import { stopAndLeave } from "./music.js";
 import { startLivePoll } from "./live-poll.js";
 
@@ -57,7 +57,7 @@ client.once(Events.ClientReady, (c) => {
 
 client.on(Events.MessageCreate, async (message) => {
   if (!message.guild || message.author.bot) return;
-  getGuildConfig(message.guild.id);
+  await getGuildConfig(message.guild.id).catch(() => {});
   await runAutomod(message);
 });
 
@@ -112,7 +112,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
   }
 
   // Post to member log channel if configured
-  const config = getGuildConfig(member.guild.id);
+  const config = await getGuildConfig(member.guild.id);
   if (config.member_log_channel_id) {
     const ch = member.guild.channels.cache.get(config.member_log_channel_id);
     if (ch?.isTextBased()) {
@@ -149,7 +149,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
 });
 
 client.on(Events.GuildMemberRemove, async (member) => {
-  const config = getGuildConfig(member.guild.id);
+  const config = await getGuildConfig(member.guild.id);
   if (!config.member_log_channel_id) return;
 
   const ch = member.guild.channels.cache.get(config.member_log_channel_id);
@@ -172,9 +172,9 @@ client.on(Events.GuildMemberRemove, async (member) => {
   }
 });
 
-client.on(Events.GuildCreate, (guild) => {
+client.on(Events.GuildCreate, async (guild) => {
   console.log(`Joined guild: ${guild.name} (${guild.id})`);
-  getGuildConfig(guild.id);
+  await getGuildConfig(guild.id).catch(() => {});
 });
 
 // Auto-disconnect when bot is alone in voice channel
@@ -194,7 +194,11 @@ if (!token) {
   process.exit(1);
 }
 
-// Health-check server so UptimeRobot can keep the bot awake
+// Initialise database tables before connecting to Discord
+await initDb();
+console.log("✅ Database initialised");
+
+// Health-check server so UptimeRobot / Railway can verify the bot is alive
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 createServer((req, res) => {
   res.writeHead(200, { "Content-Type": "application/json" });

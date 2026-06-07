@@ -105,7 +105,7 @@ export async function handleModCommand(interaction: ChatInputCommandInteraction)
       const reason = interaction.options.getString("reason") ?? "No reason provided";
       const deleteDays = interaction.options.getInteger("delete_days") ?? 0;
       await target.ban({ reason, deleteMessageSeconds: deleteDays * 86400 });
-      logAction(guildId, "BAN", target.id, mod.id, reason);
+      await logAction(guildId, "BAN", target.id, mod.id, reason);
       await sendModLog(interaction.client, guildId, "BAN", target.user.tag, target.id, mod.user.tag, reason);
       await interaction.reply({ content: `✅ Banned **${target.user.tag}**. Reason: ${reason}`, ephemeral: true });
 
@@ -113,7 +113,7 @@ export async function handleModCommand(interaction: ChatInputCommandInteraction)
       const userId = interaction.options.getString("user_id", true);
       const reason = interaction.options.getString("reason") ?? "No reason provided";
       await interaction.guild.members.unban(userId, reason);
-      logAction(guildId, "UNBAN", userId, mod.id, reason);
+      await logAction(guildId, "UNBAN", userId, mod.id, reason);
       await sendModLog(interaction.client, guildId, "UNBAN", userId, userId, mod.user.tag, reason);
       await interaction.reply({ content: `✅ Unbanned user ID \`${userId}\`.`, ephemeral: true });
 
@@ -121,7 +121,7 @@ export async function handleModCommand(interaction: ChatInputCommandInteraction)
       const target = interaction.options.getMember("user") as GuildMember;
       const reason = interaction.options.getString("reason") ?? "No reason provided";
       await target.kick(reason);
-      logAction(guildId, "KICK", target.id, mod.id, reason);
+      await logAction(guildId, "KICK", target.id, mod.id, reason);
       await sendModLog(interaction.client, guildId, "KICK", target.user.tag, target.id, mod.user.tag, reason);
       await interaction.reply({ content: `✅ Kicked **${target.user.tag}**. Reason: ${reason}`, ephemeral: true });
 
@@ -135,29 +135,30 @@ export async function handleModCommand(interaction: ChatInputCommandInteraction)
       }
       const reason = interaction.options.getString("reason") ?? "No reason provided";
       await target.timeout(ms, reason);
-      logAction(guildId, "TIMEOUT", target.id, mod.id, reason, duration);
+      await logAction(guildId, "TIMEOUT", target.id, mod.id, reason, duration);
       await sendModLog(interaction.client, guildId, "TIMEOUT", target.user.tag, target.id, mod.user.tag, reason, `Duration: ${duration}`);
       await interaction.reply({ content: `✅ Timed out **${target.user.tag}** for ${duration}. Reason: ${reason}`, ephemeral: true });
 
     } else if (cmd === "untimeout") {
       const target = interaction.options.getMember("user") as GuildMember;
       await target.timeout(null);
-      logAction(guildId, "UNTIMEOUT", target.id, mod.id);
+      await logAction(guildId, "UNTIMEOUT", target.id, mod.id);
       await interaction.reply({ content: `✅ Removed timeout from **${target.user.tag}**.`, ephemeral: true });
 
     } else if (cmd === "warn") {
       const target = interaction.options.getMember("user") as GuildMember;
       const reason = interaction.options.getString("reason", true);
-      addWarning(guildId, target.id, mod.id, reason);
-      const count = getWarnings(guildId, target.id).length;
-      logAction(guildId, "WARN", target.id, mod.id, reason);
+      await addWarning(guildId, target.id, mod.id, reason);
+      const warnings = await getWarnings(guildId, target.id);
+      const count = warnings.length;
+      await logAction(guildId, "WARN", target.id, mod.id, reason);
       await sendModLog(interaction.client, guildId, "WARN", target.user.tag, target.id, mod.user.tag, reason, `Total warnings: ${count}`);
       await target.send(`⚠️ You have been warned in **${interaction.guild.name}**.\nReason: ${reason}\nTotal warnings: ${count}`).catch(() => {});
       await interaction.reply({ content: `✅ Warned **${target.user.tag}** (${count} total warnings). Reason: ${reason}`, ephemeral: true });
 
     } else if (cmd === "warnings") {
       const target = interaction.options.getUser("user", true);
-      const warns = getWarnings(guildId, target.id);
+      const warns = await getWarnings(guildId, target.id);
       const embed = new EmbedBuilder()
         .setTitle(`Warnings for ${target.tag}`)
         .setColor(0xf1c40f)
@@ -174,7 +175,7 @@ export async function handleModCommand(interaction: ChatInputCommandInteraction)
 
     } else if (cmd === "clearwarnings") {
       const target = interaction.options.getUser("user", true);
-      clearWarnings(guildId, target.id);
+      await clearWarnings(guildId, target.id);
       await interaction.reply({ content: `✅ Cleared all warnings for **${target.tag}**.`, ephemeral: true });
 
     } else if (cmd === "purge") {
@@ -187,7 +188,7 @@ export async function handleModCommand(interaction: ChatInputCommandInteraction)
       if (filterUser) messages = messages.filter((m) => m.author.id === filterUser.id);
       if (!("bulkDelete" in channel)) return;
       const deleted = await (channel as any).bulkDelete(messages, true);
-      logAction(guildId, "CLEAR", filterUser?.id ?? "all", mod.id, undefined, `Deleted ${deleted.size} messages`);
+      await logAction(guildId, "CLEAR", filterUser?.id ?? "all", mod.id, undefined, `Deleted ${deleted.size} messages`);
       await sendModLog(interaction.client, guildId, "CLEAR", filterUser?.tag ?? "channel", filterUser?.id ?? "all", mod.user.tag, undefined, `Deleted ${deleted.size} messages`);
       await interaction.editReply({ content: `✅ Deleted ${deleted.size} messages.` });
     }

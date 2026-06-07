@@ -22,7 +22,7 @@ export async function sendModLog(
   reason?: string,
   extra?: string
 ) {
-  const config = getGuildConfig(guildId);
+  const config = await getGuildConfig(guildId);
   if (!config.log_channel_id) return;
 
   const channel = client.channels.cache.get(config.log_channel_id) as

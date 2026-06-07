@@ -4,14 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --experimental-sqlite --import tsx/esm src/index.ts",
-    "start": "node --experimental-sqlite --import tsx/esm src/index.ts",
-    "deploy-commands": "node --experimental-sqlite --import tsx/esm src/deploy-commands.ts"
+    "dev": "node --import tsx/esm src/index.ts",
+    "start": "node --import tsx/esm src/index.ts",
+    "deploy-commands": "node --import tsx/esm src/deploy-commands.ts"
   },
   "dependencies": {
     "@discordjs/voice": "^0.18.0",
     "@distube/ytdl-core": "^4.16.12",
     "discord.js": "^14.18.0",
+    "pg": "^8.13.3",
     "play-dl": "^1.9.7",
     "sodium-native": "^4.3.3",
     "tsx": "catalog:",
@@ -19,6 +20,7 @@
     "youtube-sr": "^4.3.12"
   },
   "devDependencies": {
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "@types/pg": "^8.11.11"
   }
 }

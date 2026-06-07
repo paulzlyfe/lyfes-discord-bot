@@ -98,7 +98,7 @@ async function postGoLiveAlert(
 // --- Main poll loop ---
 
 async function pollOnce(client: Client) {
-  const links = getAllStreamerLinks();
+  const links = await getAllStreamerLinks();
 
   await Promise.allSettled(
     links.map(async ({ guild_id, user_id, platform, url }) => {
