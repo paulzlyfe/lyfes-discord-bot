@@ -33,3 +33,6 @@ externalPort = 8081
 [[ports]]
 localPort = 20903
 externalPort = 3000
+
+[nix]
+packages = ["fly"]
