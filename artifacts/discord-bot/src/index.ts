@@ -178,12 +178,20 @@ client.on(Events.GuildCreate, async (guild) => {
 });
 
 // Auto-disconnect when bot is alone in voice channel
-client.on(Events.VoiceStateUpdate, (oldState) => {
+client.on(Events.VoiceStateUpdate, (oldState, newState) => {
+  // Only care about humans leaving — ignore the bot's own state changes
+  if (oldState.member?.user.bot || newState.member?.user.bot) return;
+  // Only trigger when someone leaves a channel (had a channel, now doesn't or moved away)
+  if (!oldState.channelId) return;
+
   const guild = oldState.guild;
   const me = guild.members.me;
   if (!me?.voice.channel) return;
-  const members = me.voice.channel.members.filter((m) => !m.user.bot);
-  if (members.size === 0) {
+  // Only act if they left the bot's current channel
+  if (oldState.channelId !== me.voice.channelId) return;
+
+  const humans = me.voice.channel.members.filter((m) => !m.user.bot);
+  if (humans.size === 0) {
     stopAndLeave(guild.id);
   }
 });
