@@ -1,0 +1,13 @@
+app = "lyfe-moderation-bot"
+primary_region = "iad"
+
+[build]
+  dockerfile = "artifacts/discord-bot/Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
