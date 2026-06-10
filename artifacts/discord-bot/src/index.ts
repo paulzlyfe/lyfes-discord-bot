@@ -256,6 +256,17 @@ if (!token) {
   process.exit(1);
 }
 
+// Pre-initialise libsodium-wrappers WASM so it is ready before any voice
+// connection is attempted. Without this, the WASM may not be loaded yet when
+// @discordjs/voice first tries to encrypt, causing an instant voice failure.
+try {
+  const sodium = await import("libsodium-wrappers");
+  await sodium.ready;
+  console.log("✅ libsodium-wrappers ready");
+} catch (e) {
+  console.warn("⚠️ libsodium-wrappers failed to init, @noble/ciphers will be used instead:", (e as Error).message);
+}
+
 // Initialise database tables before connecting to Discord
 await initDb();
 console.log("✅ Database initialised");
