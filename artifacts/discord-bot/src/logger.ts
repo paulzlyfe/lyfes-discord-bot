@@ -1,4 +1,14 @@
-import { Client, EmbedBuilder, TextChannel, Message, PartialMessage } from "discord.js";
+import {
+  Client,
+  EmbedBuilder,
+  TextChannel,
+  Message,
+  PartialMessage,
+  VoiceState,
+  GuildMember,
+  PartialGuildMember,
+  AuditLogEvent,
+} from "discord.js";
 import { getGuildConfig } from "./db.js";
 
 const HARDCODED_LOG_CHANNEL = "1506457782742679752";
@@ -15,6 +25,11 @@ const COLORS: Record<string, number> = {
   AUTOMOD_DELETE: 0x95a5a6,
   MESSAGE_DELETE: 0xe74c3c,
   MESSAGE_EDIT: 0x3498db,
+  VOICE_JOIN: 0x2ecc71,
+  VOICE_LEAVE: 0xe74c3c,
+  VOICE_MOVE: 0xf39c12,
+  MUTE: 0xf1c40f,
+  UNMUTE: 0x2ecc71,
 };
 
 async function getLogChannel(client: Client, guildId: string): Promise<TextChannel | undefined> {
@@ -106,6 +121,120 @@ export async function sendMessageEditLog(
       { name: "Before", value: (oldMessage.content || "*Not cached*").slice(0, 1024) },
       { name: "After", value: (newMessage.content || "*Empty*").slice(0, 1024) },
     )
+    .setTimestamp();
+
+  await channel.send({ embeds: [embed] }).catch(() => {});
+}
+
+export async function sendVoiceLog(
+  client: Client,
+  oldState: VoiceState,
+  newState: VoiceState
+) {
+  const guild = newState.guild;
+  const member = newState.member;
+  if (!member || member.user.bot) return;
+
+  const channel = await getLogChannel(client, guild.id);
+  if (!channel) return;
+
+  const joined = !oldState.channelId && !!newState.channelId;
+  const left = !!oldState.channelId && !newState.channelId;
+  const moved = !!oldState.channelId && !!newState.channelId && oldState.channelId !== newState.channelId;
+
+  if (!joined && !left && !moved) return;
+
+  let title: string;
+  let color: number;
+  const fields: { name: string; value: string; inline?: boolean }[] = [
+    { name: "Member", value: `${member.user.tag} (<@${member.id}>)`, inline: true },
+  ];
+
+  if (joined) {
+    title = "🔊 Joined Voice Channel";
+    color = COLORS.VOICE_JOIN;
+    fields.push({ name: "Channel", value: `<#${newState.channelId}>`, inline: true });
+  } else if (left) {
+    title = "🔇 Left Voice Channel";
+    color = COLORS.VOICE_LEAVE;
+    fields.push({ name: "Channel", value: `<#${oldState.channelId}>`, inline: true });
+  } else {
+    title = "🔀 Moved Voice Channel";
+    color = COLORS.VOICE_MOVE;
+    fields.push(
+      { name: "From", value: `<#${oldState.channelId}>`, inline: true },
+      { name: "To", value: `<#${newState.channelId}>`, inline: true },
+    );
+
+    // Try to find who moved them via audit log
+    try {
+      const auditLogs = await guild.fetchAuditLogs({ type: AuditLogEvent.MemberMove, limit: 5 });
+      const entry = auditLogs.entries.find(
+        (e) => Date.now() - e.createdTimestamp < 5000
+      );
+      if (entry?.executor) {
+        fields.push({ name: "Moved by", value: `${entry.executor.tag} (<@${entry.executor.id}>)`, inline: true });
+      }
+    } catch {
+      // Missing audit log permission — skip
+    }
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor(color)
+    .setTitle(title)
+    .addFields(fields)
+    .setTimestamp();
+
+  await channel.send({ embeds: [embed] }).catch(() => {});
+}
+
+export async function sendMuteLog(
+  client: Client,
+  oldMember: GuildMember | PartialGuildMember,
+  newMember: GuildMember
+) {
+  if (newMember.user.bot) return;
+
+  const oldTimeout = oldMember.communicationDisabledUntil;
+  const newTimeout = newMember.communicationDisabledUntil;
+
+  const wasMuted = oldTimeout && oldTimeout > new Date();
+  const isMuted = newTimeout && newTimeout > new Date();
+
+  if (wasMuted === isMuted) return; // No change
+
+  const channel = await getLogChannel(client, newMember.guild.id);
+  if (!channel) return;
+
+  const action = isMuted ? "MUTE" : "UNMUTE";
+  const title = isMuted ? "🔇 Member Timed Out" : "🔊 Timeout Removed";
+
+  const fields: { name: string; value: string; inline?: boolean }[] = [
+    { name: "Member", value: `${newMember.user.tag} (<@${newMember.id}>)`, inline: true },
+  ];
+
+  if (isMuted && newTimeout) {
+    fields.push({ name: "Expires", value: `<t:${Math.floor(newTimeout.getTime() / 1000)}:R>`, inline: true });
+  }
+
+  // Try to find who issued the timeout via audit log
+  try {
+    const auditLogs = await newMember.guild.fetchAuditLogs({ type: AuditLogEvent.MemberUpdate, limit: 5 });
+    const entry = auditLogs.entries.find(
+      (e) => e.target?.id === newMember.id && Date.now() - e.createdTimestamp < 5000
+    );
+    if (entry?.executor) {
+      fields.push({ name: "By", value: `${entry.executor.tag} (<@${entry.executor.id}>)`, inline: true });
+    }
+  } catch {
+    // Missing audit log permission — skip
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor(COLORS[action])
+    .setTitle(title)
+    .addFields(fields)
     .setTimestamp();
 
   await channel.send({ embeds: [embed] }).catch(() => {});

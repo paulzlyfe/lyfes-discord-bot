@@ -14,7 +14,7 @@ import { handleStreamingCommand } from "./commands/streaming.js";
 import { initDb, getGuildConfig } from "./db.js";
 import { stopAndLeave } from "./music.js";
 import { startLivePoll } from "./live-poll.js";
-import { sendMessageDeleteLog, sendMessageEditLog } from "./logger.js";
+import { sendMessageDeleteLog, sendMessageEditLog, sendVoiceLog, sendMuteLog } from "./logger.js";
 
 const MOD_COMMANDS = new Set([
   "ban", "unban", "kick", "timeout", "untimeout",
@@ -186,23 +186,29 @@ client.on(Events.GuildCreate, async (guild) => {
   await getGuildConfig(guild.id).catch(() => {});
 });
 
-// Auto-disconnect when bot is alone in voice channel
-client.on(Events.VoiceStateUpdate, (oldState, newState) => {
-  // Only care about humans leaving — ignore the bot's own state changes
+// Voice state: logging + auto-disconnect
+client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
+  // Log voice joins, leaves, and moves (skip bots)
+  await sendVoiceLog(client, oldState, newState).catch(() => {});
+
+  // Auto-disconnect when bot is alone — ignore bot's own state changes
   if (oldState.member?.user.bot || newState.member?.user.bot) return;
-  // Only trigger when someone leaves a channel (had a channel, now doesn't or moved away)
   if (!oldState.channelId) return;
 
   const guild = oldState.guild;
   const me = guild.members.me;
   if (!me?.voice.channel) return;
-  // Only act if they left the bot's current channel
   if (oldState.channelId !== me.voice.channelId) return;
 
   const humans = me.voice.channel.members.filter((m) => !m.user.bot);
   if (humans.size === 0) {
     stopAndLeave(guild.id);
   }
+});
+
+// Log mutes/timeouts applied outside of slash commands (e.g. via Discord UI)
+client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
+  await sendMuteLog(client, oldMember, newMember).catch(() => {});
 });
 
 const token = process.env.DISCORD_BOT_TOKEN;
