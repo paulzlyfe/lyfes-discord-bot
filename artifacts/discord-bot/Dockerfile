@@ -15,7 +15,7 @@ RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
 WORKDIR /app
 
 COPY artifacts/discord-bot/package.json ./
-RUN sed -i 's/"tsx": "catalog:"/"tsx": "^4.21.0"/' package.json && \
+RUN sed -i 's/: "catalog:"/: "*"/g' package.json && \
     sed -i '/"sodium-native"/d' package.json
 
 RUN npm install
