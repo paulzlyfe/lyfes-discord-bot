@@ -14,7 +14,13 @@ import { handleStreamingCommand } from "./commands/streaming.js";
 import { initDb, getGuildConfig } from "./db.js";
 import { stopAndLeave } from "./music.js";
 import { startLivePoll } from "./live-poll.js";
-import { sendMessageDeleteLog, sendMessageEditLog, sendVoiceLog, sendMuteLog } from "./logger.js";
+import {
+  sendMessageDeleteLog, sendMessageEditLog,
+  sendVoiceLog, sendMuteLog,
+  sendMemberRoleLog,
+  sendRoleCreateLog, sendRoleDeleteLog, sendRoleUpdateLog,
+  sendChannelCreateLog, sendChannelDeleteLog, sendChannelUpdateLog,
+} from "./logger.js";
 
 const MOD_COMMANDS = new Set([
   "ban", "unban", "kick", "timeout", "untimeout",
@@ -206,9 +212,34 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
   }
 });
 
-// Log mutes/timeouts applied outside of slash commands (e.g. via Discord UI)
+// Log mutes/timeouts and role changes
 client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
   await sendMuteLog(client, oldMember, newMember).catch(() => {});
+  await sendMemberRoleLog(client, oldMember, newMember).catch(() => {});
+});
+
+// Role events
+client.on(Events.GuildRoleCreate, async (role) => {
+  await sendRoleCreateLog(client, role).catch(() => {});
+});
+client.on(Events.GuildRoleDelete, async (role) => {
+  await sendRoleDeleteLog(client, role).catch(() => {});
+});
+client.on(Events.GuildRoleUpdate, async (oldRole, newRole) => {
+  await sendRoleUpdateLog(client, oldRole, newRole).catch(() => {});
+});
+
+// Channel events
+client.on(Events.ChannelCreate, async (channel) => {
+  if (!channel.isDMBased()) await sendChannelCreateLog(client, channel).catch(() => {});
+});
+client.on(Events.ChannelDelete, async (channel) => {
+  if (!channel.isDMBased()) await sendChannelDeleteLog(client, channel as import("discord.js").GuildChannel).catch(() => {});
+});
+client.on(Events.ChannelUpdate, async (oldChannel, newChannel) => {
+  if (!oldChannel.isDMBased() && !newChannel.isDMBased()) {
+    await sendChannelUpdateLog(client, oldChannel as import("discord.js").GuildChannel, newChannel as import("discord.js").GuildChannel).catch(() => {});
+  }
 });
 
 const token = process.env.DISCORD_BOT_TOKEN;
