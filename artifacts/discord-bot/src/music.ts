@@ -194,6 +194,10 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
     if (newState.status === VoiceConnectionStatus.Connecting) everReachedConnecting = true;
   });
 
+  // Log internal @discordjs/voice debug messages so we can see exactly what
+  // fails (WebSocket errors, UDP errors, encryption errors, etc.)
+  connection.on("debug", (msg) => console.log(`[voice-debug] ${msg}`));
+
   try {
     await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
     console.log("[voice] Connection ready ✅");
