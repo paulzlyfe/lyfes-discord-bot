@@ -9,12 +9,57 @@ import {
   StreamType,
   VoiceConnectionStatus,
 } from "@discordjs/voice";
-import { GuildMember, TextChannel, VoiceChannel } from "discord.js";
+import type { DiscordGatewayAdapterCreator } from "@discordjs/voice";
+import { Client, Events, Guild, GuildMember, TextChannel, VoiceChannel } from "discord.js";
 import { spawn, execFile } from "child_process";
 import { promisify } from "util";
 import { Readable } from "stream";
 
 const execFileAsync = promisify(execFile);
+
+/**
+ * Custom voice adapter that subscribes directly to raw gateway events.
+ * Bypasses client.voice.adapters pipeline which fails to deliver
+ * VOICE_SERVER_UPDATE in some cloud environments (e.g. Railway).
+ * Events.Raw fires before handlePacket, so we receive it exactly once.
+ */
+function buildVoiceAdapter(client: Client, guild: Guild): DiscordGatewayAdapterCreator {
+  return (methods) => {
+    function onRaw(packet: { t: string; d: Record<string, unknown> }, _shardId: number) {
+      const { t, d } = packet;
+      if (!t || !d) return;
+      if (t === "VOICE_SERVER_UPDATE" && d["guild_id"] === guild.id) {
+        console.log("[voice] ✓ VOICE_SERVER_UPDATE received");
+        methods.onVoiceServerUpdate(d as unknown as Parameters<typeof methods.onVoiceServerUpdate>[0]);
+      } else if (
+        t === "VOICE_STATE_UPDATE" &&
+        d["guild_id"] === guild.id &&
+        d["user_id"] === client.user?.id
+      ) {
+        console.log("[voice] ✓ VOICE_STATE_UPDATE (bot) received");
+        methods.onVoiceStateUpdate(d as unknown as Parameters<typeof methods.onVoiceStateUpdate>[0]);
+      }
+    }
+
+    client.on(Events.Raw as string, onRaw);
+
+    return {
+      sendPayload: (data) => {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (guild.shard as any).send(data);
+          return true;
+        } catch (err) {
+          console.error("[voice] Failed to send voice payload:", err);
+          return false;
+        }
+      },
+      destroy: () => {
+        client.off(Events.Raw as string, onRaw);
+      },
+    };
+  };
+}
 
 export interface Track {
   title: string;
@@ -94,8 +139,8 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
   const connection = joinVoiceChannel({
     channelId: voiceChannel.id,
     guildId: voiceChannel.guild.id,
-    adapterCreator: voiceChannel.guild.voiceAdapterCreator,
-    selfDeaf: true,
+    adapterCreator: buildVoiceAdapter(voiceChannel.guild.client, voiceChannel.guild),
+    selfDeaf: false,
     selfMute: false,
   });
 

@@ -11,8 +11,17 @@ description: Why @discordjs/voice "operation was aborted" on cloud hosts, and th
 
 `sodium-native` is a native module; its prebuilt binary can fail to load on a given cloud host, leaving no working lib.
 
-**Fix:** add `libsodium-wrappers` (pure WASM, no native build) to the bot package's `dependencies`. It's a guaranteed fallback that works on any host. Keep `sodium-native` (faster when it loads); the discovery loop falls through to libsodium-wrappers if sodium-native fails.
+**Fix (encryption):** add `libsodium-wrappers` (pure WASM, no native build) to the bot package's `dependencies`. It's a guaranteed fallback that works on any host. Keep `sodium-native` (faster when it loads); the discovery loop falls through to libsodium-wrappers if sodium-native fails.
 
-**Why:** WASM needs no compilation/prebuilt binary, so it can't fail to load due to host environment mismatch.
+**Fix (stuck at signalling — Railway/cloud):** the discord.js `client.voice.adapters` pipeline silently fails to deliver `VOICE_SERVER_UPDATE` to `@discordjs/voice` in some cloud environments. Symptoms: bot appears in the voice channel in Discord UI, but `entersState(Ready)` times out at `signalling` — no permissions error, shard is ready.
 
-**How to apply / verify:** run `node -e "import('@discordjs/voice').then(v=>console.log(v.generateDependencyReport()))"` inside the artifact dir — the "Encryption Libraries" section must show at least one loaded lib besides a possibly-broken sodium-native. Also note: cloud hosts must allow outbound UDP for voice; if UDP is blocked the same "operation was aborted" appears even with encryption working.
+Root cause: `handlePacket` → `VOICE_SERVER_UPDATE.js` → `client.voice.adapters.get(guildId)?.onVoiceServerUpdate()` lookup returns undefined. `Events.Raw` fires BEFORE `handlePacket`, so a custom `DiscordGatewayAdapterCreator` that subscribes to `Events.Raw` directly receives the event exactly once, bypassing the broken adapter map.
+
+Solution — replace `voiceAdapterCreator: voiceChannel.guild.voiceAdapterCreator` with a custom `buildVoiceAdapter(client, guild)` that:
+- subscribes `client.on(Events.Raw, onRaw)` and calls `methods.onVoiceServerUpdate` / `methods.onVoiceStateUpdate` directly
+- uses `(guild.shard as any).send(data)` for sendPayload
+- calls `client.off(Events.Raw, onRaw)` on destroy
+
+**Why:** `Events.Raw` is emitted in `WebSocketManager.attachEvents()` before `handlePacket`, guaranteeing exactly-once delivery without the fragile adapter map lookup.
+
+**How to apply / verify:** Railway logs should show `[voice] ✓ VOICE_SERVER_UPDATE received` and `[voice] signalling → connecting → ready` after the fix.
