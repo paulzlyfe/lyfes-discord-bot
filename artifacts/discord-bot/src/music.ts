@@ -69,15 +69,38 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
   const voiceChannel = member.voice.channel as VoiceChannel;
   if (!voiceChannel) throw new Error("You must be in a voice channel.");
 
+  // Destroy any stale connection before creating a new one
+  const existing = getVoiceConnection(voiceChannel.guild.id);
+  if (existing && existing.state.status !== VoiceConnectionStatus.Ready) {
+    console.log(`[voice] Destroying stale connection in state: ${existing.state.status}`);
+    existing.destroy();
+  }
+
   const connection = joinVoiceChannel({
     channelId: voiceChannel.id,
     guildId: voiceChannel.guild.id,
     adapterCreator: voiceChannel.guild.voiceAdapterCreator,
-    selfDeaf: false,
+    selfDeaf: true,
     selfMute: false,
   });
 
-  await entersState(connection, VoiceConnectionStatus.Ready, 15_000);
+  // Log every state transition so Railway logs show exactly where it stalls
+  connection.on("stateChange", (oldState, newState) => {
+    console.log(`[voice] ${oldState.status} → ${newState.status}`);
+  });
+
+  try {
+    await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
+  } catch (err) {
+    const stuck = connection.state.status;
+    connection.destroy();
+    throw new Error(
+      `Voice connection failed (stuck at: ${stuck}). ` +
+      (stuck === VoiceConnectionStatus.Signalling
+        ? "Discord is not sending a voice server response — check bot permissions."
+        : "UDP connection could not be established — possible network restriction.")
+    );
+  }
 
   let queue = queues.get(voiceChannel.guild.id);
   if (!queue) {

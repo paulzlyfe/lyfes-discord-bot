@@ -56,10 +56,18 @@ const client = new Client({
   partials: [Partials.Message, Partials.Channel],
 });
 
-client.once(Events.ClientReady, (c) => {
+client.once(Events.ClientReady, async (c) => {
   console.log(`✅ Logged in as ${c.user.tag}`);
   c.user.setActivity("Hard Knock Lyfe");
   startLivePoll(c);
+
+  // Log voice encryption status so we can verify the right library is loaded on Railway
+  try {
+    const voice = await import("@discordjs/voice");
+    console.log("[voice] Dependency report:\n" + voice.generateDependencyReport());
+  } catch (e) {
+    console.error("[voice] Could not generate dependency report:", e);
+  }
 });
 
 client.on(Events.MessageCreate, async (message) => {
