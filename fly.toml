@@ -1,13 +1,19 @@
-app = "lyfe-moderation-bot"
-primary_region = "iad"
+# fly.toml app configuration file generated for lyfe-moderation-bot on 2026-06-10T04:44:00Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'lyfe-moderation-bot'
+primary_region = 'iad'
 
 [build]
-  dockerfile = "artifacts/discord-bot/Dockerfile"
+  dockerfile = 'artifacts/discord-bot/Dockerfile'
 
 [env]
-  NODE_ENV = "production"
+  NODE_ENV = 'production'
 
 [[vm]]
-  memory = "512mb"
-  cpu_kind = "shared"
+  memory = '512mb'
+  cpu_kind = 'shared'
   cpus = 1
+  memory_mb = 512
