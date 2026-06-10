@@ -29,40 +29,55 @@ function buildVoiceAdapter(client: Client, guild: Guild): DiscordGatewayAdapterC
   return (methods) => {
     let serverReceived = false;
     let stateReceived = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let lastServerPacket: any = null;
 
-    // Wrap methods so each is forwarded exactly once, no matter which path delivers it
+    // Wrap methods so each is forwarded exactly once regardless of which delivery path wins.
+    //
+    // ORDERING FIX: @discordjs/voice's configureNetworking() requires BOTH packets to be set
+    // when addServerPacket() calls it — but addStatePacket() never calls configureNetworking().
+    // If VOICE_SERVER_UPDATE arrives before VOICE_STATE_UPDATE (possible on Railway), the
+    // connection is permanently stuck at signalling. We fix this by re-calling
+    // onVoiceServerUpdate after onVoiceStateUpdate if the server packet was already stored.
     const once: typeof methods = {
       onVoiceServerUpdate: (data) => {
         if (serverReceived) return;
         serverReceived = true;
-        console.log("[voice] ✓ VOICE_SERVER_UPDATE forwarded to @discordjs/voice");
+        lastServerPacket = data;
+        console.log("[voice] ✓ VOICE_SERVER_UPDATE → addServerPacket");
         methods.onVoiceServerUpdate(data);
       },
       onVoiceStateUpdate: (data) => {
         if (stateReceived) return;
         stateReceived = true;
-        console.log("[voice] ✓ VOICE_STATE_UPDATE (bot) forwarded to @discordjs/voice");
+        console.log("[voice] ✓ VOICE_STATE_UPDATE → addStatePacket");
         methods.onVoiceStateUpdate(data);
+        // If server packet arrived first, configureNetworking bailed (state was null).
+        // Re-trigger it now that state is stored.
+        if (lastServerPacket) {
+          console.log("[voice] Re-triggering configureNetworking (server arrived before state)");
+          methods.onVoiceServerUpdate(lastServerPacket as Parameters<typeof methods.onVoiceServerUpdate>[0]);
+        }
       },
       destroy: () => methods.destroy(),
     };
 
     // Use the built-in adapter so OP4 is sent via guild.shard (proven reliable)
-    // and `once` is registered in client.voice.adapters as the fallback path.
+    // and `once` is registered in client.voice.adapters as the normal delivery fallback.
     const builtinAdapter = guild.voiceAdapterCreator(once);
 
     // Subscribe to raw events as the primary delivery path.
-    // "raw" fires before handlePacket, so this always wins; the once-guard
-    // prevents the handlePacket path from double-processing.
+    // "raw" fires BEFORE handlePacket in WebSocketManager, so this wins the race;
+    // the once-guard prevents double-processing if the normal path also fires.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function onRaw(packet: any) {
       const { t, d } = packet ?? {};
       if (!t || !d) return;
       if (t === "VOICE_SERVER_UPDATE" && d.guild_id === guild.id) {
-        console.log("[voice] raw: VOICE_SERVER_UPDATE for guild", guild.id);
+        console.log("[voice] raw VOICE_SERVER_UPDATE — endpoint:", !!d.endpoint);
         once.onVoiceServerUpdate(d as Parameters<typeof methods.onVoiceServerUpdate>[0]);
       } else if (t === "VOICE_STATE_UPDATE" && d.guild_id === guild.id && d.user_id === client.user?.id) {
-        console.log("[voice] raw: VOICE_STATE_UPDATE (bot) channel", d.channel_id);
+        console.log("[voice] raw VOICE_STATE_UPDATE — channel:", d.channel_id, "session:", !!d.session_id);
         once.onVoiceStateUpdate(d as Parameters<typeof methods.onVoiceStateUpdate>[0]);
       }
     }
@@ -73,7 +88,7 @@ function buildVoiceAdapter(client: Client, guild: Guild): DiscordGatewayAdapterC
     return {
       sendPayload: (data) => {
         const ok = builtinAdapter.sendPayload(data);
-        if (!ok) console.warn("[voice] sendPayload returned false — shard may not be ready");
+        console.log(`[voice] sendPayload → ${ok ? "sent ✓" : "FAILED (shard not ready?)"}`);
         return ok;
       },
       destroy: () => {
@@ -168,9 +183,13 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
     selfMute: false,
   });
 
-  // Log every state transition so Railway logs show exactly where it stalls
+  // Track whether the connection ever advanced past signalling.
+  // If it reached "connecting" but bounced back, the problem is UDP (Railway blocks outbound UDP).
+  // If it never left "signalling", the voice gateway events were never delivered.
+  let everReachedConnecting = false;
   connection.on("stateChange", (oldState, newState) => {
     console.log(`[voice] ${oldState.status} → ${newState.status}`);
+    if (newState.status === VoiceConnectionStatus.Connecting) everReachedConnecting = true;
   });
 
   try {
@@ -179,11 +198,19 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
   } catch (err) {
     const stuck = connection.state.status;
     connection.destroy();
+
+    if (everReachedConnecting) {
+      // Got past signalling but couldn't finish — almost certainly outbound UDP is blocked.
+      throw new Error(
+        `Voice connection failed at the UDP/networking stage (last state: ${stuck}). ` +
+        "This typically means **outbound UDP is blocked** on the host (Railway blocks UDP). " +
+        "The bot cannot stream audio from Railway. Try deploying on a VPS, Fly.io, or Render instead."
+      );
+    }
     throw new Error(
-      `Voice connection failed (stuck at: ${stuck}). ` +
-      (stuck === VoiceConnectionStatus.Signalling
-        ? "Discord didn't respond to the join request — the bot likely lacks Connect/View Channel permission on this voice channel."
-        : "UDP connection could not be established — possible network restriction on the host.")
+      `Voice connection stuck at signalling — Discord's VOICE_SERVER_UPDATE never arrived. ` +
+      "Check Railway logs for '[voice] raw VOICE_SERVER_UPDATE' — if missing, the raw event listener isn't firing. " +
+      "Also confirm sendPayload logged 'sent ✓'."
     );
   }
 
