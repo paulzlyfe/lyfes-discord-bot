@@ -69,6 +69,21 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
   const voiceChannel = member.voice.channel as VoiceChannel;
   if (!voiceChannel) throw new Error("You must be in a voice channel.");
 
+  // Fail fast with a clear message if permissions are missing
+  const me = voiceChannel.guild.members.me;
+  if (me) {
+    const perms = voiceChannel.permissionsFor(me);
+    const missing: string[] = [];
+    if (!perms?.has("ViewChannel")) missing.push("View Channel");
+    if (!perms?.has("Connect")) missing.push("Connect");
+    if (!perms?.has("Speak")) missing.push("Speak");
+    if (missing.length) {
+      throw new Error(`I'm missing permissions on that voice channel: **${missing.join(", ")}**. Please grant these to my role.`);
+    }
+  }
+
+  console.log(`[voice] Joining channel "${voiceChannel.name}" (${voiceChannel.id}) in guild ${voiceChannel.guild.id}`);
+
   // Destroy any stale connection before creating a new one
   const existing = getVoiceConnection(voiceChannel.guild.id);
   if (existing && existing.state.status !== VoiceConnectionStatus.Ready) {
@@ -91,14 +106,15 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
 
   try {
     await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
+    console.log("[voice] Connection ready ✅");
   } catch (err) {
     const stuck = connection.state.status;
     connection.destroy();
     throw new Error(
       `Voice connection failed (stuck at: ${stuck}). ` +
       (stuck === VoiceConnectionStatus.Signalling
-        ? "Discord is not sending a voice server response — check bot permissions."
-        : "UDP connection could not be established — possible network restriction.")
+        ? "Discord didn't respond to the join request — the bot likely lacks Connect/View Channel permission on this voice channel."
+        : "UDP connection could not be established — possible network restriction on the host.")
     );
   }
 
