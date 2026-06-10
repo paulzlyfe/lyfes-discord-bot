@@ -9,9 +9,28 @@ if (!connectionString) {
 const pool = new Pool({
   connectionString,
   ssl: connectionString.includes("localhost") ? false : { rejectUnauthorized: false },
+  idleTimeoutMillis: 30_000,
+  max: 3,
 });
 
 export async function initDb(): Promise<void> {
+  // Retry up to 20 times with exponential backoff (cap 30 s) — guards against transient
+  // ECONNRESET / ETIMEDOUT on startup (e.g. after rapid restarts exhausted connection slots).
+  const MAX_ATTEMPTS = 20;
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      await pool.query(`SELECT 1`); // connectivity check
+      break;
+    } catch (err) {
+      lastErr = err;
+      const wait = Math.min(attempt * 3000, 30_000);
+      console.error(`[db] Connection attempt ${attempt}/${MAX_ATTEMPTS} failed — retrying in ${wait}ms:`, (err as Error).message);
+      await new Promise((r) => setTimeout(r, wait));
+      if (attempt === MAX_ATTEMPTS) throw lastErr;
+    }
+  }
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS guild_config (
       guild_id TEXT PRIMARY KEY,

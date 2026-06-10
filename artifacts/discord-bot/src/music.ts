@@ -20,65 +20,67 @@ const execFileAsync = promisify(execFile);
 /**
  * Hybrid voice adapter:
  *  - Uses guild.voiceAdapterCreator for reliable OP4 sending (guild.shard.send).
- *  - Wraps the @discordjs/voice methods in a once-guard so each is delivered exactly once.
- *  - Also subscribes to client "raw" events as the primary delivery path, since
- *    Events.Raw fires BEFORE handlePacket. If the normal client.voice.adapters lookup
- *    fires too (it often doesn't on Railway), the once-guard silently drops it.
+ *  - Deduplicates VOICE_SERVER_UPDATE by endpoint+token so configureNetworking() is
+ *    not called twice from the raw+builtin dual-delivery paths, but NEW values on
+ *    reconnect are always forwarded (unlike a simple once-guard which blocks them).
+ *  - Also subscribes to client "raw" events as a backup delivery path in case
+ *    client.voice.adapters lookup doesn't fire.
+ *  - ORDERING FIX: if VOICE_SERVER_UPDATE arrives before VOICE_STATE_UPDATE,
+ *    configureNetworking() exits early (state is null). We re-trigger it once per
+ *    server-update after state is stored.
  */
 function buildVoiceAdapter(client: Client, guild: Guild): DiscordGatewayAdapterCreator {
   return (methods) => {
-    let serverReceived = false;
-    let stateReceived = false;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let lastServerPacket: any = null;
+    // Dedup VOICE_SERVER_UPDATE by endpoint+token; resets on new values (reconnect).
+    const seenServerKeys = new Set<string>();
+    let lastServerPacket: Parameters<typeof methods.onVoiceServerUpdate>[0] | null = null;
+    // Allow exactly one ordering-fix re-trigger per server update.
+    let retriggered = false;
 
-    // Wrap methods so each is forwarded exactly once regardless of which delivery path wins.
-    //
-    // ORDERING FIX: @discordjs/voice's configureNetworking() requires BOTH packets to be set
-    // when addServerPacket() calls it — but addStatePacket() never calls configureNetworking().
-    // If VOICE_SERVER_UPDATE arrives before VOICE_STATE_UPDATE (possible on Railway), the
-    // connection is permanently stuck at signalling. We fix this by re-calling
-    // onVoiceServerUpdate after onVoiceStateUpdate if the server packet was already stored.
-    const once: typeof methods = {
-      onVoiceServerUpdate: (data) => {
-        if (serverReceived) return;
-        serverReceived = true;
-        lastServerPacket = data;
-        console.log("[voice] ✓ VOICE_SERVER_UPDATE → addServerPacket");
-        methods.onVoiceServerUpdate(data);
-      },
-      onVoiceStateUpdate: (data) => {
-        if (stateReceived) return;
-        stateReceived = true;
-        console.log("[voice] ✓ VOICE_STATE_UPDATE → addStatePacket");
-        methods.onVoiceStateUpdate(data);
-        // If server packet arrived first, configureNetworking bailed (state was null).
-        // Re-trigger it now that state is stored.
-        if (lastServerPacket) {
-          console.log("[voice] Re-triggering configureNetworking (server arrived before state)");
-          methods.onVoiceServerUpdate(lastServerPacket as Parameters<typeof methods.onVoiceServerUpdate>[0]);
-        }
-      },
-      destroy: () => methods.destroy(),
-    };
+    function handleServerUpdate(data: Parameters<typeof methods.onVoiceServerUpdate>[0]) {
+      const key = `${data.endpoint}|${data.token}`;
+      if (seenServerKeys.has(key)) return;
+      seenServerKeys.add(key);
+      lastServerPacket = data;
+      retriggered = false; // new server packet — allow one re-trigger after state arrives
+      console.log("[voice] ✓ VOICE_SERVER_UPDATE → addServerPacket (endpoint:", !!data.endpoint, ")");
+      methods.onVoiceServerUpdate(data);
+    }
+
+    function handleStateUpdate(data: Parameters<typeof methods.onVoiceStateUpdate>[0]) {
+      console.log("[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session:", data.session_id, ")");
+      methods.onVoiceStateUpdate(data);
+      // ORDERING FIX: if server arrived before state, configureNetworking() bailed because
+      // state was null. Re-trigger it now that state is stored.
+      if (lastServerPacket && !retriggered) {
+        retriggered = true;
+        console.log("[voice] Re-triggering configureNetworking (server arrived before state)");
+        methods.onVoiceServerUpdate(lastServerPacket);
+      }
+    }
 
     // Use the built-in adapter so OP4 is sent via guild.shard (proven reliable)
-    // and `once` is registered in client.voice.adapters as the normal delivery fallback.
-    const builtinAdapter = guild.voiceAdapterCreator(once);
+    // and our handlers are registered in client.voice.adapters for normal delivery.
+    const adapterMethods: typeof methods = {
+      onVoiceServerUpdate: handleServerUpdate,
+      onVoiceStateUpdate: handleStateUpdate,
+      destroy: () => methods.destroy(),
+    };
+    const builtinAdapter = guild.voiceAdapterCreator(adapterMethods);
 
-    // Subscribe to raw events as the primary delivery path.
-    // "raw" fires BEFORE handlePacket in WebSocketManager, so this wins the race;
-    // the once-guard prevents double-processing if the normal path also fires.
+    // Also subscribe to raw events as a backup delivery path.
+    // "raw" fires BEFORE handlePacket so this tends to win the race;
+    // the endpoint+token dedup prevents double-processing if both paths fire.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function onRaw(packet: any) {
       const { t, d } = packet ?? {};
       if (!t || !d) return;
       if (t === "VOICE_SERVER_UPDATE" && d.guild_id === guild.id) {
         console.log("[voice] raw VOICE_SERVER_UPDATE — endpoint:", !!d.endpoint);
-        once.onVoiceServerUpdate(d as Parameters<typeof methods.onVoiceServerUpdate>[0]);
+        handleServerUpdate(d as Parameters<typeof methods.onVoiceServerUpdate>[0]);
       } else if (t === "VOICE_STATE_UPDATE" && d.guild_id === guild.id && d.user_id === client.user?.id) {
         console.log("[voice] raw VOICE_STATE_UPDATE — channel:", d.channel_id, "session:", !!d.session_id);
-        once.onVoiceStateUpdate(d as Parameters<typeof methods.onVoiceStateUpdate>[0]);
+        handleStateUpdate(d as Parameters<typeof methods.onVoiceStateUpdate>[0]);
       }
     }
 
@@ -183,12 +185,12 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
     selfMute: false,
   });
 
-  // Track whether the connection ever advanced past signalling.
-  // If it reached "connecting" but bounced back, the problem is UDP (Railway blocks outbound UDP).
-  // If it never left "signalling", the voice gateway events were never delivered.
+  // Track state transitions for diagnostics.
   let everReachedConnecting = false;
+  const stateHistory: string[] = [];
   connection.on("stateChange", (oldState, newState) => {
     console.log(`[voice] ${oldState.status} → ${newState.status}`);
+    stateHistory.push(newState.status);
     if (newState.status === VoiceConnectionStatus.Connecting) everReachedConnecting = true;
   });
 
@@ -200,17 +202,16 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
     connection.destroy();
 
     if (everReachedConnecting) {
-      // Got past signalling but couldn't finish — almost certainly outbound UDP is blocked.
+      // Reached "connecting" (gateway events delivered OK) but UDP failed.
       throw new Error(
-        `Voice connection failed at the UDP/networking stage (last state: ${stuck}). ` +
-        "This typically means **outbound UDP is blocked** on the host (Railway blocks UDP). " +
-        "The bot cannot stream audio from Railway. Try deploying on a VPS, Fly.io, or Render instead."
+        `Voice connection failed at the UDP/networking stage (states: ${stateHistory.join(" → ")}). ` +
+        "Check the Fly.io logs for '[voice]' lines to see what happened. " +
+        "This may be a transient network issue — try again, or check if Discord's voice servers are reachable."
       );
     }
     throw new Error(
-      `Voice connection stuck at signalling — Discord's VOICE_SERVER_UPDATE never arrived. ` +
-      "Check Railway logs for '[voice] raw VOICE_SERVER_UPDATE' — if missing, the raw event listener isn't firing. " +
-      "Also confirm sendPayload logged 'sent ✓'."
+      `Voice connection stuck at signalling — Discord's VOICE_SERVER_UPDATE/VOICE_STATE_UPDATE never arrived. ` +
+      "Check Fly.io logs for '[voice] raw VOICE_SERVER_UPDATE' and '[voice] sendPayload → sent ✓'."
     );
   }
 
