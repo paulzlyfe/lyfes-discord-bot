@@ -14,6 +14,7 @@ import { handleStreamingCommand } from "./commands/streaming.js";
 import { initDb, getGuildConfig } from "./db.js";
 import { stopAndLeave } from "./music.js";
 import { startLivePoll } from "./live-poll.js";
+import { sendMessageDeleteLog, sendMessageEditLog } from "./logger.js";
 
 const MOD_COMMANDS = new Set([
   "ban", "unban", "kick", "timeout", "untimeout",
@@ -170,6 +171,14 @@ client.on(Events.GuildMemberRemove, async (member) => {
       .setTimestamp();
     await ch.send({ embeds: [embed] }).catch(() => {});
   }
+});
+
+client.on(Events.MessageDelete, async (message) => {
+  await sendMessageDeleteLog(client, message).catch(() => {});
+});
+
+client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
+  await sendMessageEditLog(client, oldMessage, newMessage).catch(() => {});
 });
 
 client.on(Events.GuildCreate, async (guild) => {
