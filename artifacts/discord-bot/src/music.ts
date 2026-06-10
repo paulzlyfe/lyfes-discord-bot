@@ -246,6 +246,10 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
         }
       });
 
+      // Networking emits "close" with the numeric WebSocket close code after
+      // destructuring it from the CloseEvent. This is the cleanest way to get
+      // the actual code Discord sent (4006 = session invalid, 4014 = disconnected, etc.)
+      net.on("close", (code: number) => console.log(`[voice-net-close] WebSocket closed by Discord — code=${code}`));
       net.on("debug", (msg: string) => console.log(`[voice-net-debug] ${msg}`));
       net.on("error", (e: Error) => console.log(`[voice-net-error] ${e.message}`));
     }

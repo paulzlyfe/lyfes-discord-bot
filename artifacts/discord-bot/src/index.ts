@@ -56,6 +56,12 @@ const client = new Client({
   partials: [Partials.Message, Partials.Channel],
 });
 
+// Prevent crashes from unhandled Discord API errors (e.g. 40060 "already acknowledged").
+// Without this handler Node.js throws the error as an uncaught exception and exits.
+client.on("error", (error) => {
+  console.error("Discord client error (non-fatal):", error.message ?? error);
+});
+
 client.once(Events.ClientReady, async (c) => {
   console.log(`✅ Logged in as ${c.user.tag}`);
   c.user.setActivity("Hard Knock Lyfe");
@@ -254,6 +260,15 @@ const token = process.env.DISCORD_BOT_TOKEN;
 if (!token) {
   console.error("❌ DISCORD_BOT_TOKEN is not set.");
   process.exit(1);
+}
+
+// Guard: only run the bot in the Fly.io production environment.
+// If FLY_APP_NAME is absent and ENABLE_LOCAL_BOT is not set, exit cleanly
+// so the Replit dev workflow doesn't spin up a second instance that competes
+// with the production bot for gateway events and voice sessions.
+if (!process.env.FLY_APP_NAME && !process.env.ENABLE_LOCAL_BOT) {
+  console.log("ℹ️  Not running on Fly.io. Set ENABLE_LOCAL_BOT=1 to run locally. Exiting.");
+  process.exit(0);
 }
 
 // Pre-initialise libsodium-wrappers WASM so it is ready before any voice
