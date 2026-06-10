@@ -12,6 +12,7 @@ import {
   GuildChannel,
   ChannelType,
   PermissionsBitField,
+  Guild,
 } from "discord.js";
 import { getGuildConfig } from "./db.js";
 
@@ -61,6 +62,29 @@ async function getLogChannel(client: Client, guildId: string): Promise<TextChann
   const config = await getGuildConfig(guildId);
   const channelId = config.log_channel_id ?? HARDCODED_LOG_CHANNEL;
   return client.channels.cache.get(channelId) as TextChannel | undefined;
+}
+
+// Looks up who performed an action via the audit log. Returns a "Tag (mention)"
+// string, or undefined if no recent entry / no View Audit Log permission.
+async function fetchExecutor(
+  guild: Guild,
+  type: AuditLogEvent,
+  targetId?: string
+): Promise<string | undefined> {
+  try {
+    const logs = await guild.fetchAuditLogs({ type, limit: 5 });
+    const entry = logs.entries.find(
+      (e) =>
+        Date.now() - e.createdTimestamp < 5000 &&
+        (!targetId || (e.target as { id?: string } | null)?.id === targetId)
+    );
+    if (entry?.executor) {
+      return `${entry.executor.tag} (<@${entry.executor.id}>)`;
+    }
+  } catch {
+    /* no audit log permission */
+  }
+  return undefined;
 }
 
 // ─── Mod actions (ban/kick/warn etc.) ────────────────────────────────────────
@@ -285,14 +309,8 @@ export async function sendMemberRoleLog(
     fields.push({ name: "❌ Roles Removed", value: removed.map((r: Role) => `<@&${r.id}>`).join(", "), inline: false });
   }
 
-  try {
-    const type = added.size > 0 ? AuditLogEvent.MemberRoleUpdate : AuditLogEvent.MemberRoleUpdate;
-    const logs = await newMember.guild.fetchAuditLogs({ type, limit: 5 });
-    const entry = logs.entries.find((e) => e.target?.id === newMember.id && Date.now() - e.createdTimestamp < 5000);
-    if (entry?.executor) {
-      fields.push({ name: "By", value: `${entry.executor.tag} (<@${entry.executor.id}>)`, inline: true });
-    }
-  } catch { /* no audit log permission */ }
+  const by = await fetchExecutor(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
+  if (by) fields.push({ name: "By", value: by, inline: true });
 
   const color = added.size > 0 ? COLORS.ROLE_ASSIGN : COLORS.ROLE_REMOVE;
   const title = added.size > 0 && removed.size > 0
@@ -310,15 +328,19 @@ export async function sendRoleCreateLog(client: Client, role: Role) {
   const channel = await getLogChannel(client, role.guild.id);
   if (!channel) return;
 
+  const fields = [
+    { name: "Name", value: role.name, inline: true },
+    { name: "Color", value: role.hexColor, inline: true },
+    { name: "Mentionable", value: role.mentionable ? "Yes" : "No", inline: true },
+  ];
+  const by = await fetchExecutor(role.guild, AuditLogEvent.RoleCreate, role.id);
+  if (by) fields.push({ name: "By", value: by, inline: false });
+
   await channel.send({
     embeds: [new EmbedBuilder()
       .setColor(COLORS.ROLE_CREATE)
       .setTitle("✅ Role Created")
-      .addFields(
-        { name: "Name", value: role.name, inline: true },
-        { name: "Color", value: role.hexColor, inline: true },
-        { name: "Mentionable", value: role.mentionable ? "Yes" : "No", inline: true },
-      )
+      .addFields(fields)
       .setTimestamp()],
   }).catch(() => {});
 }
@@ -327,11 +349,15 @@ export async function sendRoleDeleteLog(client: Client, role: Role) {
   const channel = await getLogChannel(client, role.guild.id);
   if (!channel) return;
 
+  const fields = [{ name: "Name", value: role.name, inline: true }];
+  const by = await fetchExecutor(role.guild, AuditLogEvent.RoleDelete, role.id);
+  if (by) fields.push({ name: "By", value: by, inline: false });
+
   await channel.send({
     embeds: [new EmbedBuilder()
       .setColor(COLORS.ROLE_DELETE)
       .setTitle("❌ Role Deleted")
-      .addFields({ name: "Name", value: role.name, inline: true })
+      .addFields(fields)
       .setTimestamp()],
   }).catch(() => {});
 }
@@ -356,14 +382,18 @@ export async function sendRoleUpdateLog(client: Client, oldRole: Role, newRole: 
   const channel = await getLogChannel(client, newRole.guild.id);
   if (!channel) return;
 
+  const fields = [
+    { name: "Role", value: `<@&${newRole.id}> (${newRole.name})`, inline: true },
+    { name: "Changes", value: changes.join("\n").slice(0, 1024), inline: false },
+  ];
+  const by = await fetchExecutor(newRole.guild, AuditLogEvent.RoleUpdate, newRole.id);
+  if (by) fields.push({ name: "By", value: by, inline: false });
+
   await channel.send({
     embeds: [new EmbedBuilder()
       .setColor(COLORS.ROLE_EDIT)
       .setTitle("✏️ Role Edited")
-      .addFields(
-        { name: "Role", value: `<@&${newRole.id}> (${newRole.name})`, inline: true },
-        { name: "Changes", value: changes.join("\n").slice(0, 1024) },
-      )
+      .addFields(fields)
       .setTimestamp()],
   }).catch(() => {});
 }
@@ -374,15 +404,19 @@ export async function sendChannelCreateLog(client: Client, channel: GuildChannel
   const logChannel = await getLogChannel(client, channel.guild.id);
   if (!logChannel) return;
 
+  const fields = [
+    { name: "Name", value: `<#${channel.id}> (${channel.name})`, inline: true },
+    { name: "Type", value: channelTypeName(channel.type), inline: true },
+    { name: "Category", value: channel.parent?.name ?? "None", inline: true },
+  ];
+  const by = await fetchExecutor(channel.guild, AuditLogEvent.ChannelCreate, channel.id);
+  if (by) fields.push({ name: "By", value: by, inline: false });
+
   await logChannel.send({
     embeds: [new EmbedBuilder()
       .setColor(COLORS.CHANNEL_CREATE)
       .setTitle("✅ Channel Created")
-      .addFields(
-        { name: "Name", value: `<#${channel.id}> (${channel.name})`, inline: true },
-        { name: "Type", value: channelTypeName(channel.type), inline: true },
-        { name: "Category", value: channel.parent?.name ?? "None", inline: true },
-      )
+      .addFields(fields)
       .setTimestamp()],
   }).catch(() => {});
 }
@@ -391,15 +425,19 @@ export async function sendChannelDeleteLog(client: Client, channel: GuildChannel
   const logChannel = await getLogChannel(client, channel.guild.id);
   if (!logChannel) return;
 
+  const fields = [
+    { name: "Name", value: channel.name, inline: true },
+    { name: "Type", value: channelTypeName(channel.type), inline: true },
+    { name: "Category", value: channel.parent?.name ?? "None", inline: true },
+  ];
+  const by = await fetchExecutor(channel.guild, AuditLogEvent.ChannelDelete, channel.id);
+  if (by) fields.push({ name: "By", value: by, inline: false });
+
   await logChannel.send({
     embeds: [new EmbedBuilder()
       .setColor(COLORS.CHANNEL_DELETE)
       .setTitle("❌ Channel Deleted")
-      .addFields(
-        { name: "Name", value: channel.name, inline: true },
-        { name: "Type", value: channelTypeName(channel.type), inline: true },
-        { name: "Category", value: channel.parent?.name ?? "None", inline: true },
-      )
+      .addFields(fields)
       .setTimestamp()],
   }).catch(() => {});
 }
@@ -418,14 +456,18 @@ export async function sendChannelUpdateLog(client: Client, oldChannel: GuildChan
   const logChannel = await getLogChannel(client, newChannel.guild.id);
   if (!logChannel) return;
 
+  const fields = [
+    { name: "Channel", value: `<#${newChannel.id}>`, inline: true },
+    { name: "Changes", value: changes.join("\n").slice(0, 1024), inline: false },
+  ];
+  const by = await fetchExecutor(newChannel.guild, AuditLogEvent.ChannelUpdate, newChannel.id);
+  if (by) fields.push({ name: "By", value: by, inline: false });
+
   await logChannel.send({
     embeds: [new EmbedBuilder()
       .setColor(COLORS.CHANNEL_MOVE)
       .setTitle("🔀 Channel Updated")
-      .addFields(
-        { name: "Channel", value: `<#${newChannel.id}>`, inline: true },
-        { name: "Changes", value: changes.join("\n").slice(0, 1024) },
-      )
+      .addFields(fields)
       .setTimestamp()],
   }).catch(() => {});
 }
