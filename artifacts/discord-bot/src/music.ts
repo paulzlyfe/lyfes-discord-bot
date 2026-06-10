@@ -37,13 +37,26 @@ function buildVoiceAdapter(client: Client, guild: Guild): DiscordGatewayAdapterC
     // Allow exactly one ordering-fix re-trigger per server update.
     let retriggered = false;
 
+    function resetForReconnect() {
+      // Clear dedup state so that the same endpoint+token from Discord is accepted
+      // fresh on each reconnect attempt. Without this, after the first failure the
+      // seenServerKeys set blocks subsequent VOICE_SERVER_UPDATEs with the same
+      // values, and the re-trigger can't fire either (retriggered=true), so the bot
+      // gets stuck in Signalling with no configureNetworking() call and times out.
+      seenServerKeys.clear();
+      retriggered = false;
+      console.log("[voice] resetForReconnect — cleared dedup state");
+    }
+
     function handleServerUpdate(data: Parameters<typeof methods.onVoiceServerUpdate>[0]) {
       const key = `${data.endpoint}|${data.token}`;
       if (seenServerKeys.has(key)) return;
       seenServerKeys.add(key);
       lastServerPacket = data;
       retriggered = false; // new server packet — allow one re-trigger after state arrives
-      console.log("[voice] ✓ VOICE_SERVER_UPDATE → addServerPacket (endpoint:", !!data.endpoint, ")");
+      // Log the actual endpoint host (no token) so we can see which voice region is used
+      const endpointHost = (data.endpoint ?? "").split(":")[0];
+      console.log(`[voice] ✓ VOICE_SERVER_UPDATE → addServerPacket (endpoint: ${endpointHost})`);
       methods.onVoiceServerUpdate(data);
     }
 
@@ -76,7 +89,8 @@ function buildVoiceAdapter(client: Client, guild: Guild): DiscordGatewayAdapterC
       const { t, d } = packet ?? {};
       if (!t || !d) return;
       if (t === "VOICE_SERVER_UPDATE" && d.guild_id === guild.id) {
-        console.log("[voice] raw VOICE_SERVER_UPDATE — endpoint:", !!d.endpoint);
+        const host = (d.endpoint ?? "").split(":")[0];
+        console.log(`[voice] raw VOICE_SERVER_UPDATE — endpoint: ${host}`);
         handleServerUpdate(d as Parameters<typeof methods.onVoiceServerUpdate>[0]);
       } else if (t === "VOICE_STATE_UPDATE" && d.guild_id === guild.id && d.user_id === client.user?.id) {
         console.log("[voice] raw VOICE_STATE_UPDATE — channel:", d.channel_id, "session:", !!d.session_id);
@@ -89,6 +103,11 @@ function buildVoiceAdapter(client: Client, guild: Guild): DiscordGatewayAdapterC
 
     return {
       sendPayload: (data) => {
+        // OP 4 = voice state update (sent on each connect/reconnect attempt).
+        // Reset dedup state so the next VOICE_SERVER_UPDATE from Discord is
+        // always forwarded even if it carries the same endpoint+token.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((data as any)?.op === 4) resetForReconnect();
         const ok = builtinAdapter.sendPayload(data);
         console.log(`[voice] sendPayload → ${ok ? "sent ✓" : "FAILED (shard not ready?)"}`);
         return ok;
@@ -188,15 +207,49 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
   // Track state transitions for diagnostics.
   let everReachedConnecting = false;
   const stateHistory: string[] = [];
+  // Track which networking instances we've already tapped to avoid duplicate listeners.
+  const tappedNetworking = new WeakSet();
+
   connection.on("stateChange", (oldState, newState) => {
     console.log(`[voice] ${oldState.status} → ${newState.status}`);
     stateHistory.push(newState.status);
     if (newState.status === VoiceConnectionStatus.Connecting) everReachedConnecting = true;
-  });
 
-  // Log internal @discordjs/voice debug messages so we can see exactly what
-  // fails (WebSocket errors, UDP errors, encryption errors, etc.)
-  connection.on("debug", (msg) => console.log(`[voice-debug] ${msg}`));
+    // Tap into the internal Networking object to capture WebSocket close codes and
+    // sub-state transitions. VoiceConnection doesn't forward these events itself.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const net = (newState as any).networking;
+    if (net && !tappedNetworking.has(net)) {
+      tappedNetworking.add(net);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      net.on("stateChange", (o: any, n: any) => {
+        const oCode = o?.code ?? o?.status ?? String(o);
+        const nCode = n?.code ?? n?.status ?? String(n);
+        console.log(`[voice-net] networking sub-state: ${oCode} → ${nCode}`);
+
+        // Attach WebSocket close/error listener on new states that carry a ws.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const ws = n?.ws as any;
+        if (ws) {
+          ws.once("close", (code: number, reason: Buffer) => {
+            console.log(`[voice-ws-close] code=${code} reason="${reason?.toString?.() ?? ""}"`);
+          });
+          ws.on("error", (e: Error) => {
+            console.log(`[voice-ws-error] ${e.message}`);
+          });
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const udp = n?.udp as any;
+        if (udp) {
+          udp.on("error", (e: Error) => console.log(`[voice-udp-error] ${e.message}`));
+        }
+      });
+
+      net.on("debug", (msg: string) => console.log(`[voice-net-debug] ${msg}`));
+      net.on("error", (e: Error) => console.log(`[voice-net-error] ${e.message}`));
+    }
+  });
 
   try {
     await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
