@@ -258,7 +258,7 @@ export async function handleGiveawayCommand(
         const roleList =
           allowedIds.length > 0
             ? allowedIds.map((id) => `<@&${id}>`).join(", ")
-            : "None configured — only members with Manage Messages can start giveaways.";
+            : "None configured — only server admins can start giveaways.";
 
         const embed = new EmbedBuilder()
           .setColor(0xf39c12)

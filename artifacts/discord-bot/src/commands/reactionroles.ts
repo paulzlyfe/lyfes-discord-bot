@@ -39,12 +39,18 @@ function emojiToDisplay(stored: string): string {
   return stored;
 }
 
-// The key stored in DB and compared against reaction.emoji
-function reactionEmojiKey(emoji: { id: string | null; name: string | null; animated?: boolean | null }): string {
+// Match a stored mapping key against an incoming reaction.
+// Custom emoji are matched by ID (rename-proof — a renamed emoji keeps its ID),
+// unicode emoji are matched by their character.
+function emojiMatches(
+  stored: string,
+  emoji: { id: string | null; name: string | null }
+): boolean {
   if (emoji.id) {
-    return `${emoji.animated ? "a:" : ""}${emoji.name ?? ""}:${emoji.id}`;
+    // stored is "name:id" or "a:name:id" → compare the trailing id segment
+    return stored.split(":").pop() === emoji.id;
   }
-  return emoji.name ?? "";
+  return stored === (emoji.name ?? "");
 }
 
 // ─── Command builders ─────────────────────────────────────────────────────────
@@ -125,10 +131,9 @@ export async function handleReactionAdd(
 
   if (!(await isReactionRoleMessage(reaction.message.id).catch(() => false))) return;
 
-  const key = reactionEmojiKey(reaction.emoji);
   const mappings = await getReactionRoleMappings(reaction.message.id)
     .catch((): { emoji: string; role_id: string }[] => []);
-  const entry = mappings.find((m) => m.emoji === key);
+  const entry = mappings.find((m) => emojiMatches(m.emoji, reaction.emoji));
   if (!entry) return;
 
   try {
@@ -148,10 +153,9 @@ export async function handleReactionRemove(
 
   if (!(await isReactionRoleMessage(reaction.message.id).catch(() => false))) return;
 
-  const key = reactionEmojiKey(reaction.emoji);
   const mappings = await getReactionRoleMappings(reaction.message.id)
     .catch((): { emoji: string; role_id: string }[] => []);
-  const entry = mappings.find((m) => m.emoji === key);
+  const entry = mappings.find((m) => emojiMatches(m.emoji, reaction.emoji));
   if (!entry) return;
 
   try {

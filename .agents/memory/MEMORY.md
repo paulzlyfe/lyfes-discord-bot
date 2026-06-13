@@ -1,1 +1,2 @@
 - [Discord voice encryption](discord-voice-encryption.md) — "operation was aborted" on /play means no working AEAD encryption lib; add libsodium-wrappers (tweetnacl is useless in voice 0.18).
+- [Fly.io deploy for discord-bot](fly-deploy-discord-bot.md) — deploy from workspace root w/ depot builder (legacy=unauthorized); run detached (builds exceed shell timeout); "did not respond" = needs deploy not re-register.
