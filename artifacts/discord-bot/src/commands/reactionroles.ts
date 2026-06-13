@@ -1,6 +1,7 @@
 import {
   ChatInputCommandInteraction,
   EmbedBuilder,
+  Guild,
   MessageReaction,
   PartialMessageReaction,
   PermissionFlagsBits,
@@ -19,6 +20,36 @@ import {
 } from "../db.js";
 
 // ─── Emoji helpers ────────────────────────────────────────────────────────────
+
+// Resolve emoji input from a slash command string option.
+// Discord sends ":name:" (no ID) when picked from the emoji picker in a text field.
+// We look that up in the guild emoji cache to get the full "<:name:id>" form.
+// Full "<:name:id>" / "<a:name:id>" formats are passed through unchanged.
+// Unicode emoji (e.g. "🔴") are returned as-is.
+export function resolveEmojiInput(raw: string, guild: Guild): string {
+  const trimmed = raw.trim();
+
+  // Already full custom emoji format — pass through
+  if (/^<a?:[^:]+:\d+>$/.test(trimmed)) return trimmed;
+
+  // Discord picker sends ":name:" — look up by name in guild emoji cache
+  const shortMatch = trimmed.match(/^:([^:]+):$/);
+  if (shortMatch) {
+    const name = shortMatch[1];
+    const found = guild.emojis.cache.find((e) => e.name === name);
+    if (found) {
+      return found.animated
+        ? `<a:${found.name}:${found.id}>`
+        : `<:${found.name}:${found.id}>`;
+    }
+    // Name not found — return the raw name so the error surfaces clearly
+    return trimmed;
+  }
+
+  // Unicode emoji or unrecognised — return as-is
+  return trimmed;
+}
+
 // Normalise emoji input from a slash command string option.
 // Unicode emoji  → returned as-is            (e.g. "🔴")
 // Static custom  → "<:name:id>"  → "name:id"
@@ -31,11 +62,12 @@ export function normalizeEmoji(raw: string): string {
 
 // Convert stored emoji key back to a string Discord's react() / embed can use.
 // "a:name:id" → "<a:name:id>"   (animated)
-// "name:id"   → "<:name:id>"    (static custom)
+// "name:id"   → "<:name:id>"    (static custom — only when ID part is all digits)
 // "🔴"        → "🔴"            (unicode)
 function emojiToDisplay(stored: string): string {
   if (stored.startsWith("a:")) return `<a:${stored.slice(2)}>`;
-  if (stored.includes(":")) return `<:${stored}>`;
+  // Only wrap as custom emoji when it's genuinely "name:id" (digits after colon)
+  if (/^[^:]+:\d+$/.test(stored)) return `<:${stored}>`;
   return stored;
 }
 
@@ -245,8 +277,10 @@ export async function handleReactionRoleCommand(
         const emojiRaw = interaction.options.getString(`emoji${i}`);
         const role = interaction.options.getRole(`role${i}`);
         if (!emojiRaw || !role) continue;
+        // resolveEmojiInput converts ":name:" picker format → "<:name:id>" first
+        const resolved = resolveEmojiInput(emojiRaw, interaction.guild!);
         pairs.push({
-          emoji: normalizeEmoji(emojiRaw),
+          emoji: normalizeEmoji(resolved),
           roleId: role.id,
           roleName: role.name,
         });
