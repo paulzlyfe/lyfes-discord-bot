@@ -4,6 +4,7 @@ import {
   PermissionFlagsBits,
   SlashCommandBuilder,
   EmbedBuilder,
+  TextChannel,
 } from "discord.js";
 import {
   addWarning,
@@ -12,6 +13,15 @@ import {
   logAction,
 } from "../db.js";
 import { sendModLog } from "../logger.js";
+
+// Roles allowed to use /purge (checked by name, case-insensitive).
+// Also anyone with ManageMessages permission may use it.
+const PURGE_ALLOWED_ROLE_NAMES = new Set(["boss man", "chosen ones"]);
+
+function canPurge(member: GuildMember): boolean {
+  if (member.permissions.has(PermissionFlagsBits.ManageMessages)) return true;
+  return member.roles.cache.some((r) => PURGE_ALLOWED_ROLE_NAMES.has(r.name.toLowerCase()));
+}
 
 const msFromDuration = (d: string): number => {
   const match = d.match(/^(\d+)(s|m|h|d)$/);
@@ -82,16 +92,22 @@ export const clearwarningsCommand = new SlashCommandBuilder()
 
 export const purgeCommand = new SlashCommandBuilder()
   .setName("purge")
-  .setDescription("Bulk delete messages")
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
-  .addIntegerOption((o) =>
-    o.setName("count").setDescription("Number of messages to delete (1-100)").setRequired(true).setMinValue(1).setMaxValue(100)
-  )
-  .addUserOption((o) => o.setName("user").setDescription("Only delete messages from this user"));
+  .setDescription("Bulk delete messages in this channel")
+  .addStringOption((o) =>
+    o
+      .setName("amount")
+      .setDescription("How many messages to delete")
+      .setRequired(true)
+      .addChoices(
+        { name: "50 messages", value: "50" },
+        { name: "100 messages", value: "100" },
+        { name: "All messages (up to 1000)", value: "all" }
+      )
+  );
 
 export async function handleModCommand(interaction: ChatInputCommandInteraction) {
   if (!interaction.guild) {
-    await interaction.reply({ content: "Must be used in a server.", ephemeral: true });
+    await interaction.reply({ content: "Must be used in a server.", flags: 64 });
     return;
   }
 
@@ -107,7 +123,7 @@ export async function handleModCommand(interaction: ChatInputCommandInteraction)
       await target.ban({ reason, deleteMessageSeconds: deleteDays * 86400 });
       await logAction(guildId, "BAN", target.id, mod.id, reason);
       await sendModLog(interaction.client, guildId, "BAN", target.user.tag, target.id, mod.user.tag, reason);
-      await interaction.reply({ content: `✅ Banned **${target.user.tag}**. Reason: ${reason}`, ephemeral: true });
+      await interaction.reply({ content: `✅ Banned **${target.user.tag}**. Reason: ${reason}`, flags: 64 });
 
     } else if (cmd === "unban") {
       const userId = interaction.options.getString("user_id", true);
@@ -115,7 +131,7 @@ export async function handleModCommand(interaction: ChatInputCommandInteraction)
       await interaction.guild.members.unban(userId, reason);
       await logAction(guildId, "UNBAN", userId, mod.id, reason);
       await sendModLog(interaction.client, guildId, "UNBAN", userId, userId, mod.user.tag, reason);
-      await interaction.reply({ content: `✅ Unbanned user ID \`${userId}\`.`, ephemeral: true });
+      await interaction.reply({ content: `✅ Unbanned user ID \`${userId}\`.`, flags: 64 });
 
     } else if (cmd === "kick") {
       const target = interaction.options.getMember("user") as GuildMember;
@@ -123,27 +139,27 @@ export async function handleModCommand(interaction: ChatInputCommandInteraction)
       await target.kick(reason);
       await logAction(guildId, "KICK", target.id, mod.id, reason);
       await sendModLog(interaction.client, guildId, "KICK", target.user.tag, target.id, mod.user.tag, reason);
-      await interaction.reply({ content: `✅ Kicked **${target.user.tag}**. Reason: ${reason}`, ephemeral: true });
+      await interaction.reply({ content: `✅ Kicked **${target.user.tag}**. Reason: ${reason}`, flags: 64 });
 
     } else if (cmd === "timeout") {
       const target = interaction.options.getMember("user") as GuildMember;
       const duration = interaction.options.getString("duration", true);
       const ms = msFromDuration(duration);
       if (!ms) {
-        await interaction.reply({ content: "Invalid duration. Use format: 10s, 5m, 1h, 1d", ephemeral: true });
+        await interaction.reply({ content: "Invalid duration. Use format: 10s, 5m, 1h, 1d", flags: 64 });
         return;
       }
       const reason = interaction.options.getString("reason") ?? "No reason provided";
       await target.timeout(ms, reason);
       await logAction(guildId, "TIMEOUT", target.id, mod.id, reason, duration);
       await sendModLog(interaction.client, guildId, "TIMEOUT", target.user.tag, target.id, mod.user.tag, reason, `Duration: ${duration}`);
-      await interaction.reply({ content: `✅ Timed out **${target.user.tag}** for ${duration}. Reason: ${reason}`, ephemeral: true });
+      await interaction.reply({ content: `✅ Timed out **${target.user.tag}** for ${duration}. Reason: ${reason}`, flags: 64 });
 
     } else if (cmd === "untimeout") {
       const target = interaction.options.getMember("user") as GuildMember;
       await target.timeout(null);
       await logAction(guildId, "UNTIMEOUT", target.id, mod.id);
-      await interaction.reply({ content: `✅ Removed timeout from **${target.user.tag}**.`, ephemeral: true });
+      await interaction.reply({ content: `✅ Removed timeout from **${target.user.tag}**.`, flags: 64 });
 
     } else if (cmd === "warn") {
       const target = interaction.options.getMember("user") as GuildMember;
@@ -154,7 +170,7 @@ export async function handleModCommand(interaction: ChatInputCommandInteraction)
       await logAction(guildId, "WARN", target.id, mod.id, reason);
       await sendModLog(interaction.client, guildId, "WARN", target.user.tag, target.id, mod.user.tag, reason, `Total warnings: ${count}`);
       await target.send(`⚠️ You have been warned in **${interaction.guild.name}**.\nReason: ${reason}\nTotal warnings: ${count}`).catch(() => {});
-      await interaction.reply({ content: `✅ Warned **${target.user.tag}** (${count} total warnings). Reason: ${reason}`, ephemeral: true });
+      await interaction.reply({ content: `✅ Warned **${target.user.tag}** (${count} total warnings). Reason: ${reason}`, flags: 64 });
 
     } else if (cmd === "warnings") {
       const target = interaction.options.getUser("user", true);
@@ -171,33 +187,75 @@ export async function handleModCommand(interaction: ChatInputCommandInteraction)
                 )
                 .join("\n")
         );
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: 64 });
 
     } else if (cmd === "clearwarnings") {
       const target = interaction.options.getUser("user", true);
       await clearWarnings(guildId, target.id);
-      await interaction.reply({ content: `✅ Cleared all warnings for **${target.tag}**.`, ephemeral: true });
+      await interaction.reply({ content: `✅ Cleared all warnings for **${target.tag}**.`, flags: 64 });
 
     } else if (cmd === "purge") {
-      const count = interaction.options.getInteger("count", true);
-      const filterUser = interaction.options.getUser("user");
-      const channel = interaction.channel;
-      if (!channel?.isTextBased()) return;
-      await interaction.deferReply({ ephemeral: true });
-      let messages = await channel.messages.fetch({ limit: count });
-      if (filterUser) messages = messages.filter((m) => m.author.id === filterUser.id);
-      if (!("bulkDelete" in channel)) return;
-      const deleted = await (channel as any).bulkDelete(messages, true);
-      await logAction(guildId, "CLEAR", filterUser?.id ?? "all", mod.id, undefined, `Deleted ${deleted.size} messages`);
-      await sendModLog(interaction.client, guildId, "CLEAR", filterUser?.tag ?? "channel", filterUser?.id ?? "all", mod.user.tag, undefined, `Deleted ${deleted.size} messages`);
-      await interaction.editReply({ content: `✅ Deleted ${deleted.size} messages.` });
+      // Role / permission check
+      if (!canPurge(mod)) {
+        await interaction.reply({
+          content: "❌ You need the **Boss Man** or **Chosen Ones** role (or Manage Messages permission) to use this command.",
+          flags: 64,
+        });
+        return;
+      }
+
+      const amount = interaction.options.getString("amount", true);
+      const channel = interaction.channel as TextChannel;
+      if (!channel?.isTextBased() || !("bulkDelete" in channel)) {
+        await interaction.reply({ content: "❌ This command can only be used in text channels.", flags: 64 });
+        return;
+      }
+
+      await interaction.deferReply({ flags: 64 });
+
+      let totalDeleted = 0;
+
+      if (amount === "all") {
+        // Delete in batches of 100 until the channel is clear (max 10 batches = 1 000 msgs)
+        const MAX_BATCHES = 10;
+        for (let i = 0; i < MAX_BATCHES; i++) {
+          const fetched = await channel.messages.fetch({ limit: 100 });
+          if (fetched.size === 0) break;
+          const deleted = await channel.bulkDelete(fetched, true).catch(() => null);
+          const count = deleted?.size ?? 0;
+          totalDeleted += count;
+          if (count === 0) break; // no eligible messages left (all >14 days old)
+          if (fetched.size < 100) break; // fewer than a full batch — we're done
+          await new Promise((r) => setTimeout(r, 1000)); // brief pause between batches
+        }
+      } else {
+        const limit = parseInt(amount, 10);
+        const fetched = await channel.messages.fetch({ limit });
+        const deleted = await channel.bulkDelete(fetched, true).catch(() => null);
+        totalDeleted = deleted?.size ?? 0;
+      }
+
+      await logAction(guildId, "PURGE", "all", mod.id, undefined, `Deleted ${totalDeleted} messages (${amount})`);
+      await sendModLog(
+        interaction.client,
+        guildId,
+        "CLEAR",
+        "channel",
+        "all",
+        mod.user.tag,
+        undefined,
+        `Deleted ${totalDeleted} messages (${amount})`
+      );
+      await interaction.editReply({
+        content: `✅ Deleted **${totalDeleted}** messages.${totalDeleted === 0 ? " (Messages older than 14 days cannot be bulk-deleted.)" : ""}`,
+      });
     }
   } catch (err: any) {
     const msg = `❌ Error: ${err.message}`;
     if (interaction.replied || interaction.deferred) {
       await interaction.editReply({ content: msg }).catch(() => {});
     } else {
-      await interaction.reply({ content: msg, ephemeral: true }).catch(() => {});
+      await interaction.reply({ content: msg, flags: 64 }).catch(() => {});
     }
   }
 }
