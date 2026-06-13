@@ -216,7 +216,7 @@ export async function handleGiveawayCommand(
     // Defer immediately so Discord's 3-second window never expires.
     // The DB (Neon) can take a few seconds to wake from idle — without deferring
     // first any DB call that cold-starts will cause "The application did not respond".
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
 
     // ── /giveaway-setup ─────────────────────────────────────────────────────
     if (cmd === "giveaway-setup") {

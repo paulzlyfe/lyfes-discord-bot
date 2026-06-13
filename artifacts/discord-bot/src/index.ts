@@ -102,7 +102,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
   // Handle search result dropdown picks
   if (interaction.isStringSelectMenu()) {
     if (interaction.customId.startsWith("search_select:")) {
-      await handleSearchSelect(interaction);
+      await handleSearchSelect(interaction).catch((e) =>
+        console.error("[interaction] select menu error:", e?.message ?? e)
+      );
     }
     return;
   }
@@ -111,20 +113,34 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   const { commandName } = interaction;
 
-  if (MOD_COMMANDS.has(commandName)) {
-    await handleModCommand(interaction);
-  } else if (MUSIC_COMMANDS.has(commandName)) {
-    await handleMusicCommand(interaction);
-  } else if (CONFIG_COMMANDS.has(commandName)) {
-    await handleConfigCommand(interaction);
-  } else if (UTILITY_COMMANDS.has(commandName)) {
-    await handleUtilityCommand(interaction);
-  } else if (STREAMING_COMMANDS.has(commandName)) {
-    await handleStreamingCommand(interaction);
-  } else if (GIVEAWAY_COMMANDS.has(commandName)) {
-    await handleGiveawayCommand(interaction, client);
-  } else if (REACTION_ROLE_COMMANDS.has(commandName)) {
-    await handleReactionRoleCommand(interaction);
+  try {
+    if (MOD_COMMANDS.has(commandName)) {
+      await handleModCommand(interaction);
+    } else if (MUSIC_COMMANDS.has(commandName)) {
+      await handleMusicCommand(interaction);
+    } else if (CONFIG_COMMANDS.has(commandName)) {
+      await handleConfigCommand(interaction);
+    } else if (UTILITY_COMMANDS.has(commandName)) {
+      await handleUtilityCommand(interaction);
+    } else if (STREAMING_COMMANDS.has(commandName)) {
+      await handleStreamingCommand(interaction);
+    } else if (GIVEAWAY_COMMANDS.has(commandName)) {
+      await handleGiveawayCommand(interaction, client);
+    } else if (REACTION_ROLE_COMMANDS.has(commandName)) {
+      await handleReactionRoleCommand(interaction);
+    }
+  } catch (err: any) {
+    console.error(`[interaction] unhandled error in /${commandName}:`, err?.message ?? err);
+    try {
+      const msg = "❌ An unexpected error occurred. Please try again.";
+      if (interaction.replied || interaction.deferred) {
+        await interaction.editReply({ content: msg });
+      } else {
+        await interaction.reply({ content: msg, flags: 64 });
+      }
+    } catch {
+      // interaction already timed out — nothing more we can do
+    }
   }
 });
 

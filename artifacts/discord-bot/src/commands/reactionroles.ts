@@ -179,7 +179,7 @@ export async function handleReactionRoleCommand(
   try {
     // Defer immediately — DB cold-starts on Neon can exceed Discord's 3-second
     // acknowledgement window, causing "The application did not respond".
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
 
     if (cmd === "reactionroles") {
       const sub = interaction.options.getSubcommand();
@@ -192,7 +192,9 @@ export async function handleReactionRoleCommand(
         const me = interaction.guild!.members.me;
         if (resolved && me) {
           const perms = resolved.permissionsFor(me);
-          if (!perms?.has(["ViewChannel", "SendMessages"])) {
+          const canView = perms?.has(PermissionFlagsBits.ViewChannel) ?? true;
+          const canSend = perms?.has(PermissionFlagsBits.SendMessages) ?? true;
+          if (!canView || !canSend) {
             await interaction.editReply({
               content:
                 `❌ I don't have **View Channel** and **Send Messages** permission in <#${ch.id}>.\n` +
