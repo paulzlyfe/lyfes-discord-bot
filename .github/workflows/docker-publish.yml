@@ -26,3 +26,33 @@ jobs:
           file: artifacts/discord-bot/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/lyfe-bot:latest
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Redeploy to Azure Container Instances
+        run: |
+          az container delete \
+            --resource-group lyfe-bot-rg \
+            --name lyfe-moderation-bot \
+            --yes || true
+
+          az container create \
+            --resource-group lyfe-bot-rg \
+            --name lyfe-moderation-bot \
+            --image ${{ secrets.DOCKERHUB_USERNAME }}/lyfe-bot:latest \
+            --os-type Linux \
+            --cpu 1 \
+            --memory 1.5 \
+            --restart-policy Always \
+            --registry-login-server index.docker.io \
+            --registry-username ${{ secrets.DOCKERHUB_USERNAME }} \
+            --registry-password ${{ secrets.DOCKERHUB_TOKEN }} \
+            --environment-variables \
+              DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }} \
+              FLY_APP_NAME=lyfe-moderation-bot \
+            --secure-environment-variables \
+              DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }} \
+              DATABASE_URL=${{ secrets.DATABASE_URL }}
