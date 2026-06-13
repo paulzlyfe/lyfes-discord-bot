@@ -14,12 +14,11 @@ import {
 } from "../db.js";
 import { sendModLog } from "../logger.js";
 
-// Roles allowed to use /purge (checked by name, case-insensitive).
-// Also anyone with ManageMessages permission may use it.
+// /purge is admin-only. The named roles below are also permitted.
 const PURGE_ALLOWED_ROLE_NAMES = new Set(["boss man", "chosen ones"]);
 
 function canPurge(member: GuildMember): boolean {
-  if (member.permissions.has(PermissionFlagsBits.ManageMessages)) return true;
+  if (member.permissions.has(PermissionFlagsBits.Administrator)) return true;
   return member.roles.cache.some((r) => PURGE_ALLOWED_ROLE_NAMES.has(r.name.toLowerCase()));
 }
 
@@ -92,7 +91,8 @@ export const clearwarningsCommand = new SlashCommandBuilder()
 
 export const purgeCommand = new SlashCommandBuilder()
   .setName("purge")
-  .setDescription("Bulk delete messages in this channel")
+  .setDescription("Bulk delete messages in this channel (admin only)")
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .addStringOption((o) =>
     o
       .setName("amount")
@@ -198,7 +198,7 @@ export async function handleModCommand(interaction: ChatInputCommandInteraction)
       // Role / permission check
       if (!canPurge(mod)) {
         await interaction.reply({
-          content: "❌ You need the **Boss Man** or **Chosen Ones** role (or Manage Messages permission) to use this command.",
+          content: "❌ You need the **Boss Man** or **Chosen Ones** role (or Administrator permission) to use this command.",
           flags: 64,
         });
         return;
