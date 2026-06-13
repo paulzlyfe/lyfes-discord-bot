@@ -177,32 +177,50 @@ export async function handleReactionRoleCommand(
   const cmd = interaction.commandName;
 
   try {
+    // Defer immediately — DB cold-starts on Neon can exceed Discord's 3-second
+    // acknowledgement window, causing "The application did not respond".
+    await interaction.deferReply({ ephemeral: true });
+
     if (cmd === "reactionroles") {
       const sub = interaction.options.getSubcommand();
 
       if (sub === "setchannel") {
         const ch = interaction.options.getChannel("channel", true);
+
+        // Verify the bot can actually see and post in the chosen channel
+        const resolved = interaction.guild!.channels.cache.get(ch.id);
+        const me = interaction.guild!.members.me;
+        if (resolved && me) {
+          const perms = resolved.permissionsFor(me);
+          if (!perms?.has(["ViewChannel", "SendMessages"])) {
+            await interaction.editReply({
+              content:
+                `❌ I don't have **View Channel** and **Send Messages** permission in <#${ch.id}>.\n` +
+                `Please grant those permissions to the bot in that channel, then try again.`,
+            });
+            return;
+          }
+        }
+
         await setReactionRoleChannel(guildId, ch.id);
-        await interaction.reply({
+        await interaction.editReply({
           content: `✅ Reaction roles channel set to <#${ch.id}>.`,
-          flags: 64,
         });
+
       } else if (sub === "list") {
         const config = await getReactionRoleConfig(guildId);
-        await interaction.reply({
+        await interaction.editReply({
           content: config.channel_id
             ? `📋 Reaction roles channel: <#${config.channel_id}>`
             : "No reaction roles channel set. Use `/reactionroles setchannel` first.",
-          flags: 64,
         });
       }
 
     } else if (cmd === "setreactionrole") {
       const config = await getReactionRoleConfig(guildId);
       if (!config.channel_id) {
-        await interaction.reply({
+        await interaction.editReply({
           content: "❌ No reaction roles channel configured. Run `/reactionroles setchannel` first.",
-          flags: 64,
         });
         return;
       }
@@ -211,9 +229,8 @@ export async function handleReactionRoleCommand(
         .fetch(config.channel_id)
         .catch(() => null)) as TextChannel | null;
       if (!targetCh) {
-        await interaction.reply({
+        await interaction.editReply({
           content: "❌ The configured reaction roles channel no longer exists. Please set a new one.",
-          flags: 64,
         });
         return;
       }
@@ -234,9 +251,8 @@ export async function handleReactionRoleCommand(
       }
 
       if (pairs.length === 0) {
-        await interaction.reply({
+        await interaction.editReply({
           content: "❌ You must provide at least one emoji and role.",
-          flags: 64,
         });
         return;
       }
@@ -254,14 +270,11 @@ export async function handleReactionRoleCommand(
         )
         .setFooter({ text: "React to add a role • Remove reaction to remove the role" });
 
-      await interaction.deferReply({ flags: 64 });
-
       const posted = await targetCh.send({ embeds: [embed] });
 
       // React with each emoji — converts stored key back to the format react() expects
       for (const p of pairs) {
         await posted.react(emojiToDisplay(p.emoji)).catch(() => {
-          // fallback: pass the raw stored value directly
           return posted.react(p.emoji).catch(() => {});
         });
       }
