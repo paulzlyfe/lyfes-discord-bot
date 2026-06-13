@@ -36,8 +36,10 @@ export function parseDuration(raw: string): number {
 }
 
 // ─── Permission check ─────────────────────────────────────────────────────────
+// Admins can always run giveaways. Any role explicitly added via
+// /giveaway-setup addrole is also permitted.
 async function canRunGiveaway(member: GuildMember, guildId: string): Promise<boolean> {
-  if (member.permissions.has(PermissionFlagsBits.ManageMessages)) return true;
+  if (member.permissions.has(PermissionFlagsBits.Administrator)) return true;
   const config = await getGiveawayConfig(guildId);
   const allowedIds: string[] = JSON.parse(config.allowed_role_ids || "[]");
   if (allowedIds.length === 0) return false;

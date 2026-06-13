@@ -1,7 +1,6 @@
 import {
   ChatInputCommandInteraction,
   EmbedBuilder,
-  GuildMember,
   MessageReaction,
   PartialMessageReaction,
   PermissionFlagsBits,
@@ -19,12 +18,33 @@ import {
   isReactionRoleMessage,
 } from "../db.js";
 
-// ─── Emoji normaliser ─────────────────────────────────────────────────────────
-// Converts user input like <:name:123> or <a:name:123> to "name:123".
-// Plain Unicode emoji are returned as-is.
+// ─── Emoji helpers ────────────────────────────────────────────────────────────
+// Normalise emoji input from a slash command string option.
+// Unicode emoji  → returned as-is            (e.g. "🔴")
+// Static custom  → "<:name:id>"  → "name:id"
+// Animated custom→ "<a:name:id>" → "a:name:id"
 export function normalizeEmoji(raw: string): string {
-  const m = raw.trim().match(/^<a?:([^:]+):(\d+)>$/);
-  return m ? `${m[1]}:${m[2]}` : raw.trim();
+  const m = raw.trim().match(/^<(a?):([^:]+):(\d+)>$/);
+  if (m) return `${m[1] ? "a:" : ""}${m[2]}:${m[3]}`;
+  return raw.trim();
+}
+
+// Convert stored emoji key back to a string Discord's react() / embed can use.
+// "a:name:id" → "<a:name:id>"   (animated)
+// "name:id"   → "<:name:id>"    (static custom)
+// "🔴"        → "🔴"            (unicode)
+function emojiToDisplay(stored: string): string {
+  if (stored.startsWith("a:")) return `<a:${stored.slice(2)}>`;
+  if (stored.includes(":")) return `<:${stored}>`;
+  return stored;
+}
+
+// The key stored in DB and compared against reaction.emoji
+function reactionEmojiKey(emoji: { id: string | null; name: string | null; animated?: boolean | null }): string {
+  if (emoji.id) {
+    return `${emoji.animated ? "a:" : ""}${emoji.name ?? ""}:${emoji.id}`;
+  }
+  return emoji.name ?? "";
 }
 
 // ─── Command builders ─────────────────────────────────────────────────────────
@@ -47,22 +67,25 @@ export const reactionRolesCommand = new SlashCommandBuilder()
 export const setReactionRoleCommand = (() => {
   const cmd = new SlashCommandBuilder()
     .setName("setreactionrole")
-    .setDescription("Post a reaction role message with up to 5 emoji → role mappings")
+    .setDescription("Post a reaction role message with up to 5 emoji → role mappings (admin only)")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addStringOption((o) =>
       o
         .setName("text")
-        .setDescription("The title/description shown on the reaction role message")
+        .setDescription("Title shown on the reaction role message")
         .setRequired(true)
     );
 
   // Required first pair
   cmd
     .addStringOption((o) =>
-      o.setName("emoji1").setDescription("First emoji (e.g. 🔴 or <:custom:id>)").setRequired(true)
+      o
+        .setName("emoji1")
+        .setDescription("First emoji — standard (🔴) or custom server emoji (<:name:id>)")
+        .setRequired(true)
     )
     .addRoleOption((o) =>
-      o.setName("role1").setDescription("Role given for emoji1").setRequired(true)
+      o.setName("role1").setDescription("Role given when reacting with emoji1").setRequired(true)
     );
 
   // Optional pairs 2–5
@@ -71,7 +94,7 @@ export const setReactionRoleCommand = (() => {
       .addStringOption((o) =>
         o
           .setName(`emoji${i}`)
-          .setDescription(`Emoji ${i} (optional)`)
+          .setDescription(`Emoji ${i} — standard or custom server emoji (optional)`)
       )
       .addRoleOption((o) =>
         o.setName(`role${i}`).setDescription(`Role for emoji${i} (optional)`)
@@ -81,17 +104,12 @@ export const setReactionRoleCommand = (() => {
   return cmd;
 })();
 
-// ─── Reaction role event handlers ─────────────────────────────────────────────
-
+// ─── Reaction event handlers ──────────────────────────────────────────────────
 async function resolveReaction(
   reaction: MessageReaction | PartialMessageReaction
 ): Promise<MessageReaction | null> {
   if (reaction.partial) {
-    try {
-      return await reaction.fetch();
-    } catch {
-      return null;
-    }
+    try { return await reaction.fetch(); } catch { return null; }
   }
   return reaction;
 }
@@ -103,26 +121,20 @@ export async function handleReactionAdd(
   if (rawUser.bot) return;
 
   const reaction = await resolveReaction(rawReaction);
-  if (!reaction) return;
+  if (!reaction || !reaction.message.guild) return;
 
-  const { message } = reaction;
-  if (!message.guild) return;
-  if (!(await isReactionRoleMessage(message.id).catch(() => false))) return;
+  if (!(await isReactionRoleMessage(reaction.message.id).catch(() => false))) return;
 
-  const emojiKey = reaction.emoji.id
-    ? `${reaction.emoji.name}:${reaction.emoji.id}`
-    : (reaction.emoji.name ?? "");
-
-  const mappings = await getReactionRoleMappings(message.id).catch(() => []);
-  const entry = mappings.find((m) => m.emoji === emojiKey);
+  const key = reactionEmojiKey(reaction.emoji);
+  const mappings = await getReactionRoleMappings(reaction.message.id)
+    .catch((): { emoji: string; role_id: string }[] => []);
+  const entry = mappings.find((m) => m.emoji === key);
   if (!entry) return;
 
   try {
-    const member = await message.guild.members.fetch(rawUser.id);
+    const member = await reaction.message.guild.members.fetch(rawUser.id);
     await member.roles.add(entry.role_id, "Reaction role");
-  } catch {
-    // Missing permission or member left — ignore
-  }
+  } catch { /* missing permission or member left */ }
 }
 
 export async function handleReactionRemove(
@@ -132,26 +144,20 @@ export async function handleReactionRemove(
   if (rawUser.bot) return;
 
   const reaction = await resolveReaction(rawReaction);
-  if (!reaction) return;
+  if (!reaction || !reaction.message.guild) return;
 
-  const { message } = reaction;
-  if (!message.guild) return;
-  if (!(await isReactionRoleMessage(message.id).catch(() => false))) return;
+  if (!(await isReactionRoleMessage(reaction.message.id).catch(() => false))) return;
 
-  const emojiKey = reaction.emoji.id
-    ? `${reaction.emoji.name}:${reaction.emoji.id}`
-    : (reaction.emoji.name ?? "");
-
-  const mappings = await getReactionRoleMappings(message.id).catch(() => []);
-  const entry = mappings.find((m) => m.emoji === emojiKey);
+  const key = reactionEmojiKey(reaction.emoji);
+  const mappings = await getReactionRoleMappings(reaction.message.id)
+    .catch((): { emoji: string; role_id: string }[] => []);
+  const entry = mappings.find((m) => m.emoji === key);
   if (!entry) return;
 
   try {
-    const member = await message.guild.members.fetch(rawUser.id);
+    const member = await reaction.message.guild.members.fetch(rawUser.id);
     await member.roles.remove(entry.role_id, "Reaction role removed");
-  } catch {
-    // Missing permission or member left — ignore
-  }
+  } catch { /* missing permission or member left */ }
 }
 
 // ─── Command handler ──────────────────────────────────────────────────────────
@@ -167,7 +173,6 @@ export async function handleReactionRoleCommand(
   const cmd = interaction.commandName;
 
   try {
-    // ── /reactionroles ───────────────────────────────────────────────────────
     if (cmd === "reactionroles") {
       const sub = interaction.options.getSubcommand();
 
@@ -178,7 +183,6 @@ export async function handleReactionRoleCommand(
           content: `✅ Reaction roles channel set to <#${ch.id}>.`,
           flags: 64,
         });
-
       } else if (sub === "list") {
         const config = await getReactionRoleConfig(guildId);
         await interaction.reply({
@@ -189,13 +193,11 @@ export async function handleReactionRoleCommand(
         });
       }
 
-    // ── /setreactionrole ─────────────────────────────────────────────────────
     } else if (cmd === "setreactionrole") {
       const config = await getReactionRoleConfig(guildId);
       if (!config.channel_id) {
         await interaction.reply({
-          content:
-            "❌ No reaction roles channel configured. Run `/reactionroles setchannel` first.",
+          content: "❌ No reaction roles channel configured. Run `/reactionroles setchannel` first.",
           flags: 64,
         });
         return;
@@ -214,7 +216,7 @@ export async function handleReactionRoleCommand(
 
       const text = interaction.options.getString("text", true);
 
-      // Collect emoji/role pairs (1 required + up to 4 optional)
+      // Collect emoji/role pairs
       const pairs: { emoji: string; roleId: string; roleName: string }[] = [];
       for (let i = 1; i <= 5; i++) {
         const emojiRaw = interaction.options.getString(`emoji${i}`);
@@ -235,37 +237,32 @@ export async function handleReactionRoleCommand(
         return;
       }
 
-      // Build the embed displayed in the channel
+      // Build embed
       const lines = pairs
-        .map((p) => {
-          // Display emoji: unicode as-is, custom as <:name:id>
-          const display = p.emoji.includes(":") ? `<:${p.emoji}>` : p.emoji;
-          return `${display} → <@&${p.roleId}>`;
-        })
+        .map((p) => `${emojiToDisplay(p.emoji)} → <@&${p.roleId}>`)
         .join("\n");
 
       const embed = new EmbedBuilder()
         .setColor(0x3498db)
         .setTitle(`📋 ${text}`)
-        .setDescription(`React with an emoji below to receive the corresponding role.\n\n${lines}`)
+        .setDescription(
+          `React with an emoji below to receive the corresponding role.\n\n${lines}`
+        )
         .setFooter({ text: "React to add a role • Remove reaction to remove the role" });
 
       await interaction.deferReply({ flags: 64 });
 
       const posted = await targetCh.send({ embeds: [embed] });
 
-      // React with each emoji so they appear as clickable reactions
+      // React with each emoji — converts stored key back to the format react() expects
       for (const p of pairs) {
-        const reactionTarget = p.emoji.includes(":")
-          ? interaction.guild!.emojis.cache.get(p.emoji.split(":")[1]) ?? p.emoji
-          : p.emoji;
-        await posted.react(reactionTarget).catch(() => {
-          // Custom emoji might not be in cache — try string directly
-          posted.react(p.emoji).catch(() => {});
+        await posted.react(emojiToDisplay(p.emoji)).catch(() => {
+          // fallback: pass the raw stored value directly
+          return posted.react(p.emoji).catch(() => {});
         });
       }
 
-      // Persist to DB
+      // Persist
       await createReactionRoleMessage(guildId, config.channel_id, posted.id, text);
       for (const p of pairs) {
         await addReactionRoleMapping(posted.id, p.emoji, p.roleId);
