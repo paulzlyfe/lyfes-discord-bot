@@ -11,6 +11,7 @@ import { handleMusicCommand, handleSearchSelect } from "./commands/music.js";
 import { handleConfigCommand } from "./commands/config.js";
 import { handleUtilityCommand } from "./commands/utility.js";
 import { handleStreamingCommand } from "./commands/streaming.js";
+import { handleGiveawayCommand, resumePendingGiveaways } from "./commands/giveaway.js";
 import { initDb, getGuildConfig } from "./db.js";
 import { stopAndLeave } from "./music.js";
 import { startLivePoll } from "./live-poll.js";
@@ -44,6 +45,10 @@ const STREAMING_COMMANDS = new Set([
   "setstreamer", "golive", "offair", "removestreamer",
 ]);
 
+const GIVEAWAY_COMMANDS = new Set([
+  "giveaway", "giveaway-setup",
+]);
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -52,8 +57,9 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.GuildMessageReactions,
   ],
-  partials: [Partials.Message, Partials.Channel],
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
 // Prevent crashes from unhandled Discord API errors (e.g. 40060 "already acknowledged").
@@ -66,6 +72,7 @@ client.once(Events.ClientReady, async (c) => {
   console.log(`✅ Logged in as ${c.user.tag}`);
   c.user.setActivity("Hard Knock Lyfe");
   startLivePoll(c);
+  await resumePendingGiveaways(c);
 
   // Log voice encryption status so we can verify the right library is loaded on Railway
   try {
@@ -105,6 +112,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await handleUtilityCommand(interaction);
   } else if (STREAMING_COMMANDS.has(commandName)) {
     await handleStreamingCommand(interaction);
+  } else if (GIVEAWAY_COMMANDS.has(commandName)) {
+    await handleGiveawayCommand(interaction, client);
   }
 });
 

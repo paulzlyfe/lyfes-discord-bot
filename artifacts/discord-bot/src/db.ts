@@ -69,6 +69,24 @@ export async function initDb(): Promise<void> {
       url TEXT NOT NULL,
       PRIMARY KEY (guild_id, user_id)
     );
+
+    CREATE TABLE IF NOT EXISTS giveaway_config (
+      guild_id TEXT PRIMARY KEY,
+      channel_id TEXT,
+      allowed_role_ids TEXT NOT NULL DEFAULT '[]'
+    );
+
+    CREATE TABLE IF NOT EXISTS giveaways (
+      id SERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      channel_id TEXT NOT NULL,
+      message_id TEXT NOT NULL,
+      prize TEXT NOT NULL,
+      ends_at BIGINT NOT NULL,
+      winner_count INTEGER NOT NULL DEFAULT 1,
+      ended BOOLEAN NOT NULL DEFAULT FALSE,
+      winners TEXT NOT NULL DEFAULT '[]'
+    );
   `);
 }
 
@@ -200,4 +218,114 @@ export async function removeStreamerLink(guildId: string, userId: string): Promi
     "DELETE FROM streamer_links WHERE guild_id = $1 AND user_id = $2",
     [guildId, userId]
   );
+}
+
+// ─── Giveaway ─────────────────────────────────────────────────────────────────
+
+export type GiveawayRow = {
+  id: number;
+  guild_id: string;
+  channel_id: string;
+  message_id: string;
+  prize: string;
+  ends_at: number;
+  winner_count: number;
+  ended: boolean;
+  winners: string[];
+};
+
+export async function getGiveawayConfig(guildId: string) {
+  await pool.query(
+    "INSERT INTO giveaway_config (guild_id) VALUES ($1) ON CONFLICT DO NOTHING",
+    [guildId]
+  );
+  const { rows } = await pool.query<{
+    guild_id: string;
+    channel_id: string | null;
+    allowed_role_ids: string;
+  }>("SELECT * FROM giveaway_config WHERE guild_id = $1", [guildId]);
+  return rows[0];
+}
+
+export async function setGiveawayChannel(guildId: string, channelId: string): Promise<void> {
+  await pool.query(
+    `INSERT INTO giveaway_config (guild_id, channel_id)
+     VALUES ($1, $2)
+     ON CONFLICT (guild_id) DO UPDATE SET channel_id = EXCLUDED.channel_id`,
+    [guildId, channelId]
+  );
+}
+
+export async function addGiveawayRole(guildId: string, roleId: string): Promise<void> {
+  const config = await getGiveawayConfig(guildId);
+  const current: string[] = JSON.parse(config.allowed_role_ids || "[]");
+  if (!current.includes(roleId)) current.push(roleId);
+  await pool.query(
+    "UPDATE giveaway_config SET allowed_role_ids = $1 WHERE guild_id = $2",
+    [JSON.stringify(current), guildId]
+  );
+}
+
+export async function removeGiveawayRole(guildId: string, roleId: string): Promise<void> {
+  const config = await getGiveawayConfig(guildId);
+  const current: string[] = JSON.parse(config.allowed_role_ids || "[]");
+  const updated = current.filter((id) => id !== roleId);
+  await pool.query(
+    "UPDATE giveaway_config SET allowed_role_ids = $1 WHERE guild_id = $2",
+    [JSON.stringify(updated), guildId]
+  );
+}
+
+export async function createGiveaway(
+  guildId: string,
+  channelId: string,
+  messageId: string,
+  prize: string,
+  endsAt: number,
+  winnerCount: number
+): Promise<GiveawayRow> {
+  const { rows } = await pool.query<{
+    id: number;
+    guild_id: string;
+    channel_id: string;
+    message_id: string;
+    prize: string;
+    ends_at: string;
+    winner_count: number;
+    ended: boolean;
+    winners: string;
+  }>(
+    `INSERT INTO giveaways (guild_id, channel_id, message_id, prize, ends_at, winner_count)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING *`,
+    [guildId, channelId, messageId, prize, endsAt, winnerCount]
+  );
+  const r = rows[0];
+  return { ...r, ends_at: Number(r.ends_at), winners: JSON.parse(r.winners || "[]") };
+}
+
+export async function markGiveawayEnded(id: number, winnerIds: string[]): Promise<void> {
+  await pool.query(
+    "UPDATE giveaways SET ended = TRUE, winners = $1 WHERE id = $2",
+    [JSON.stringify(winnerIds), id]
+  );
+}
+
+export async function getPendingGiveaways(): Promise<GiveawayRow[]> {
+  const { rows } = await pool.query<{
+    id: number;
+    guild_id: string;
+    channel_id: string;
+    message_id: string;
+    prize: string;
+    ends_at: string;
+    winner_count: number;
+    ended: boolean;
+    winners: string;
+  }>("SELECT * FROM giveaways WHERE ended = FALSE");
+  return rows.map((r) => ({
+    ...r,
+    ends_at: Number(r.ends_at),
+    winners: JSON.parse(r.winners || "[]"),
+  }));
 }

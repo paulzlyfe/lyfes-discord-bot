@@ -30,6 +30,7 @@ import {
 } from "./commands/config.js";
 import { pingCommand, userinfoCommand } from "./commands/utility.js";
 import { setstreamerCommand, goliveCommand, offairCommand, removestreamerCommand } from "./commands/streaming.js";
+import { giveawayCommand, giveawaySetupCommand } from "./commands/giveaway.js";
 
 const token = process.env.DISCORD_BOT_TOKEN!;
 const clientId = process.env.DISCORD_CLIENT_ID!;
@@ -64,6 +65,8 @@ const commands = [
   goliveCommand,
   offairCommand,
   removestreamerCommand,
+  giveawayCommand,
+  giveawaySetupCommand,
 ].map((c) => c.toJSON());
 
 const rest = new REST().setToken(token);
