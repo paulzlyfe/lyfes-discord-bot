@@ -11,6 +11,7 @@ import {
 import {
   getGiveawayConfig,
   setGiveawayChannel,
+  setGiveawayPingRole,
   addGiveawayRole,
   removeGiveawayRole,
   createGiveaway,
@@ -20,7 +21,6 @@ import {
 } from "../db.js";
 
 // ─── Duration parser ──────────────────────────────────────────────────────────
-// Accepts: 30m, 2h, 1d, 7d, 90s, etc.
 export function parseDuration(raw: string): number {
   const match = raw.trim().match(/^(\d+)(s|m|h|d)$/i);
   if (!match) return 0;
@@ -59,6 +59,14 @@ export const giveawaySetupCommand = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub
+      .setName("pingrole")
+      .setDescription("Set the role that gets pinged when a giveaway starts (or clear it)")
+      .addRoleOption((o) =>
+        o.setName("role").setDescription("Role to ping — leave blank to clear")
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
       .setName("addrole")
       .setDescription("Add a role that is allowed to start giveaways")
       .addRoleOption((o) =>
@@ -81,10 +89,7 @@ export const giveawayCommand = new SlashCommandBuilder()
   .setName("giveaway")
   .setDescription("Start a giveaway")
   .addStringOption((o) =>
-    o
-      .setName("prize")
-      .setDescription("What are you giving away?")
-      .setRequired(true)
+    o.setName("prize").setDescription("What are you giving away?").setRequired(true)
   )
   .addStringOption((o) =>
     o
@@ -103,16 +108,16 @@ export const giveawayCommand = new SlashCommandBuilder()
 // ─── End a giveaway ───────────────────────────────────────────────────────────
 export async function endGiveaway(client: Client, giveaway: GiveawayRow): Promise<void> {
   try {
-    const guild = await client.guilds.fetch(giveaway.guild_id).catch(() => null);
-    if (!guild) return;
-
-    const channel = (await client.channels.fetch(giveaway.channel_id).catch(() => null)) as TextChannel | null;
+    const channel = (await client.channels
+      .fetch(giveaway.channel_id)
+      .catch(() => null)) as TextChannel | null;
     if (!channel) return;
 
-    const message = await channel.messages.fetch(giveaway.message_id).catch(() => null);
+    const message = await channel.messages
+      .fetch(giveaway.message_id)
+      .catch(() => null);
     if (!message) return;
 
-    // Collect everyone who reacted 🎉, minus bots
     const reaction = message.reactions.cache.get("🎉");
     const reactors = reaction
       ? (await reaction.users.fetch()).filter((u) => !u.bot)
@@ -124,7 +129,6 @@ export async function endGiveaway(client: Client, giveaway: GiveawayRow): Promis
     } else {
       const pool = [...reactors.keys()];
       const count = Math.min(giveaway.winner_count, pool.length);
-      // Fisher-Yates shuffle for fair random pick
       for (let i = pool.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -137,20 +141,18 @@ export async function endGiveaway(client: Client, giveaway: GiveawayRow): Promis
         ? winnerMentions.join(", ")
         : "No one entered — no winners this time!";
 
-    // Edit the original giveaway embed to show it ended
     const endedEmbed = new EmbedBuilder()
       .setColor(0x95a5a6)
       .setTitle("🎉 GIVEAWAY ENDED")
       .setDescription(
         `**Prize:** ${giveaway.prize}\n\n` +
-        `**Winner${winnerMentions.length !== 1 ? "s" : ""}:** ${winnersText}`
+          `**Winner${winnerMentions.length !== 1 ? "s" : ""}:** ${winnersText}`
       )
       .setFooter({ text: `${giveaway.winner_count} winner(s) were selected` })
       .setTimestamp();
 
     await message.edit({ embeds: [endedEmbed] }).catch(() => {});
 
-    // Announce winners in the same channel
     if (winnerMentions.length > 0) {
       await channel
         .send({
@@ -165,7 +167,10 @@ export async function endGiveaway(client: Client, giveaway: GiveawayRow): Promis
         .catch(() => {});
     }
 
-    await markGiveawayEnded(giveaway.id, winnerMentions.map((m) => m.replace(/<@|>/g, "")));
+    await markGiveawayEnded(
+      giveaway.id,
+      winnerMentions.map((m) => m.replace(/<@|>/g, ""))
+    );
   } catch (err) {
     console.error("[giveaway] Error ending giveaway:", err);
   }
@@ -175,7 +180,6 @@ export async function endGiveaway(client: Client, giveaway: GiveawayRow): Promis
 export function scheduleGiveaway(client: Client, giveaway: GiveawayRow): void {
   const msLeft = giveaway.ends_at - Date.now();
   if (msLeft <= 0) {
-    // Already past due — end immediately
     void endGiveaway(client, giveaway);
     return;
   }
@@ -214,26 +218,27 @@ export async function handleGiveawayCommand(
       if (sub === "channel") {
         const ch = interaction.options.getChannel("channel", true);
         await setGiveawayChannel(guildId, ch.id);
+        await interaction.reply({ content: `✅ Giveaway channel set to <#${ch.id}>.`, flags: 64 });
+
+      } else if (sub === "pingrole") {
+        const role = interaction.options.getRole("role");
+        await setGiveawayPingRole(guildId, role?.id ?? null);
         await interaction.reply({
-          content: `✅ Giveaway channel set to <#${ch.id}>.`,
+          content: role
+            ? `✅ Giveaways will now ping **${role.name}** when they start.`
+            : "✅ Giveaway ping role cleared — no role will be pinged.",
           flags: 64,
         });
 
       } else if (sub === "addrole") {
         const role = interaction.options.getRole("role", true);
         await addGiveawayRole(guildId, role.id);
-        await interaction.reply({
-          content: `✅ **${role.name}** can now start giveaways.`,
-          flags: 64,
-        });
+        await interaction.reply({ content: `✅ **${role.name}** can now start giveaways.`, flags: 64 });
 
       } else if (sub === "removerole") {
         const role = interaction.options.getRole("role", true);
         await removeGiveawayRole(guildId, role.id);
-        await interaction.reply({
-          content: `✅ **${role.name}** can no longer start giveaways.`,
-          flags: 64,
-        });
+        await interaction.reply({ content: `✅ **${role.name}** can no longer start giveaways.`, flags: 64 });
 
       } else if (sub === "list") {
         const config = await getGiveawayConfig(guildId);
@@ -249,7 +254,15 @@ export async function handleGiveawayCommand(
           .addFields(
             {
               name: "Giveaway Channel",
-              value: config.channel_id ? `<#${config.channel_id}>` : "Not set — use `/giveaway-setup channel`",
+              value: config.channel_id
+                ? `<#${config.channel_id}>`
+                : "Not set — use `/giveaway-setup channel`",
+            },
+            {
+              name: "Ping Role",
+              value: config.ping_role_id
+                ? `<@&${config.ping_role_id}>`
+                : "None — use `/giveaway-setup pingrole`",
             },
             { name: "Allowed Roles", value: roleList }
           );
@@ -259,10 +272,10 @@ export async function handleGiveawayCommand(
 
     // ── /giveaway ───────────────────────────────────────────────────────────
     } else if (cmd === "giveaway") {
-      // Permission check
       if (!(await canRunGiveaway(member, guildId))) {
         await interaction.reply({
-          content: "❌ You don't have permission to start giveaways. Ask an admin to add your role with `/giveaway-setup addrole`.",
+          content:
+            "❌ You don't have permission to start giveaways. Ask an admin to add your role with `/giveaway-setup addrole`.",
           flags: 64,
         });
         return;
@@ -281,7 +294,6 @@ export async function handleGiveawayCommand(
         return;
       }
 
-      // Get giveaway channel
       const config = await getGiveawayConfig(guildId);
       if (!config.channel_id) {
         await interaction.reply({
@@ -291,7 +303,9 @@ export async function handleGiveawayCommand(
         return;
       }
 
-      const giveawayCh = (await client.channels.fetch(config.channel_id).catch(() => null)) as TextChannel | null;
+      const giveawayCh = (await client.channels
+        .fetch(config.channel_id)
+        .catch(() => null)) as TextChannel | null;
       if (!giveawayCh) {
         await interaction.reply({
           content: "❌ The configured giveaway channel no longer exists. Please set a new one.",
@@ -308,20 +322,24 @@ export async function handleGiveawayCommand(
         .setTitle("🎉 GIVEAWAY")
         .setDescription(
           `**${prize}**\n\n` +
-          `React with 🎉 to enter!\n\n` +
-          `**Ends:** <t:${endsTimestamp}:R> (<t:${endsTimestamp}:f>)\n` +
-          `**Winners:** ${winnerCount}\n` +
-          `**Hosted by:** ${interaction.user}`
+            `React with 🎉 to enter!\n\n` +
+            `**Ends:** <t:${endsTimestamp}:R> (<t:${endsTimestamp}:f>)\n` +
+            `**Winners:** ${winnerCount}\n` +
+            `**Hosted by:** ${interaction.user}`
         )
         .setFooter({ text: `${winnerCount} winner(s) • Ends` })
         .setTimestamp(endsAt);
 
       await interaction.deferReply({ flags: 64 });
 
-      const giveawayMsg = await giveawayCh.send({ embeds: [embed] });
+      // Ping role if configured
+      const pingContent = config.ping_role_id ? `<@&${config.ping_role_id}>` : undefined;
+      const giveawayMsg = await giveawayCh.send({
+        content: pingContent,
+        embeds: [embed],
+      });
       await giveawayMsg.react("🎉");
 
-      // Persist to DB
       const row = await createGiveaway(
         guildId,
         config.channel_id,
@@ -331,7 +349,6 @@ export async function handleGiveawayCommand(
         winnerCount
       );
 
-      // Schedule the end timer
       scheduleGiveaway(client, row);
 
       await interaction.editReply({

@@ -73,8 +73,12 @@ export async function initDb(): Promise<void> {
     CREATE TABLE IF NOT EXISTS giveaway_config (
       guild_id TEXT PRIMARY KEY,
       channel_id TEXT,
-      allowed_role_ids TEXT NOT NULL DEFAULT '[]'
+      allowed_role_ids TEXT NOT NULL DEFAULT '[]',
+      ping_role_id TEXT
     );
+
+    -- Migration: add ping_role_id if this table already existed without it
+    ALTER TABLE giveaway_config ADD COLUMN IF NOT EXISTS ping_role_id TEXT;
 
     CREATE TABLE IF NOT EXISTS giveaways (
       id SERIAL PRIMARY KEY,
@@ -86,6 +90,27 @@ export async function initDb(): Promise<void> {
       winner_count INTEGER NOT NULL DEFAULT 1,
       ended BOOLEAN NOT NULL DEFAULT FALSE,
       winners TEXT NOT NULL DEFAULT '[]'
+    );
+
+    CREATE TABLE IF NOT EXISTS reaction_role_config (
+      guild_id TEXT PRIMARY KEY,
+      channel_id TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS reaction_role_messages (
+      id SERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      channel_id TEXT NOT NULL,
+      message_id TEXT NOT NULL UNIQUE,
+      label TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS reaction_role_mappings (
+      id SERIAL PRIMARY KEY,
+      message_id TEXT NOT NULL,
+      emoji TEXT NOT NULL,
+      role_id TEXT NOT NULL,
+      UNIQUE (message_id, emoji)
     );
   `);
 }
@@ -243,6 +268,7 @@ export async function getGiveawayConfig(guildId: string) {
     guild_id: string;
     channel_id: string | null;
     allowed_role_ids: string;
+    ping_role_id: string | null;
   }>("SELECT * FROM giveaway_config WHERE guild_id = $1", [guildId]);
   return rows[0];
 }
@@ -328,4 +354,79 @@ export async function getPendingGiveaways(): Promise<GiveawayRow[]> {
     ends_at: Number(r.ends_at),
     winners: JSON.parse(r.winners || "[]"),
   }));
+}
+
+export async function setGiveawayPingRole(guildId: string, roleId: string | null): Promise<void> {
+  await pool.query(
+    `INSERT INTO giveaway_config (guild_id, ping_role_id)
+     VALUES ($1, $2)
+     ON CONFLICT (guild_id) DO UPDATE SET ping_role_id = EXCLUDED.ping_role_id`,
+    [guildId, roleId]
+  );
+}
+
+// ─── Reaction roles ───────────────────────────────────────────────────────────
+
+export async function getReactionRoleConfig(guildId: string) {
+  await pool.query(
+    "INSERT INTO reaction_role_config (guild_id) VALUES ($1) ON CONFLICT DO NOTHING",
+    [guildId]
+  );
+  const { rows } = await pool.query<{ guild_id: string; channel_id: string | null }>(
+    "SELECT * FROM reaction_role_config WHERE guild_id = $1",
+    [guildId]
+  );
+  return rows[0];
+}
+
+export async function setReactionRoleChannel(guildId: string, channelId: string): Promise<void> {
+  await pool.query(
+    `INSERT INTO reaction_role_config (guild_id, channel_id)
+     VALUES ($1, $2)
+     ON CONFLICT (guild_id) DO UPDATE SET channel_id = EXCLUDED.channel_id`,
+    [guildId, channelId]
+  );
+}
+
+export async function createReactionRoleMessage(
+  guildId: string,
+  channelId: string,
+  messageId: string,
+  label: string
+): Promise<void> {
+  await pool.query(
+    "INSERT INTO reaction_role_messages (guild_id, channel_id, message_id, label) VALUES ($1, $2, $3, $4)",
+    [guildId, channelId, messageId, label]
+  );
+}
+
+export async function addReactionRoleMapping(
+  messageId: string,
+  emoji: string,
+  roleId: string
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO reaction_role_mappings (message_id, emoji, role_id)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (message_id, emoji) DO UPDATE SET role_id = EXCLUDED.role_id`,
+    [messageId, emoji, roleId]
+  );
+}
+
+export async function getReactionRoleMappings(
+  messageId: string
+): Promise<{ emoji: string; role_id: string }[]> {
+  const { rows } = await pool.query<{ emoji: string; role_id: string }>(
+    "SELECT emoji, role_id FROM reaction_role_mappings WHERE message_id = $1",
+    [messageId]
+  );
+  return rows;
+}
+
+export async function isReactionRoleMessage(messageId: string): Promise<boolean> {
+  const { rows } = await pool.query<{ message_id: string }>(
+    "SELECT message_id FROM reaction_role_messages WHERE message_id = $1 LIMIT 1",
+    [messageId]
+  );
+  return rows.length > 0;
 }

@@ -1,8 +1,8 @@
 import {
   Client,
+  Events,
   GatewayIntentBits,
   Partials,
-  Events,
 } from "discord.js";
 import { createServer } from "node:http";
 import { runAutomod } from "./automod.js";
@@ -12,6 +12,11 @@ import { handleConfigCommand } from "./commands/config.js";
 import { handleUtilityCommand } from "./commands/utility.js";
 import { handleStreamingCommand } from "./commands/streaming.js";
 import { handleGiveawayCommand, resumePendingGiveaways } from "./commands/giveaway.js";
+import {
+  handleReactionRoleCommand,
+  handleReactionAdd,
+  handleReactionRemove,
+} from "./commands/reactionroles.js";
 import { initDb, getGuildConfig } from "./db.js";
 import { stopAndLeave } from "./music.js";
 import { startLivePoll } from "./live-poll.js";
@@ -47,6 +52,10 @@ const STREAMING_COMMANDS = new Set([
 
 const GIVEAWAY_COMMANDS = new Set([
   "giveaway", "giveaway-setup",
+]);
+
+const REACTION_ROLE_COMMANDS = new Set([
+  "reactionroles", "setreactionrole",
 ]);
 
 const client = new Client({
@@ -114,7 +123,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await handleStreamingCommand(interaction);
   } else if (GIVEAWAY_COMMANDS.has(commandName)) {
     await handleGiveawayCommand(interaction, client);
+  } else if (REACTION_ROLE_COMMANDS.has(commandName)) {
+    await handleReactionRoleCommand(interaction);
   }
+});
+
+client.on(Events.MessageReactionAdd, async (reaction, user) => {
+  await handleReactionAdd(reaction, user).catch(() => {});
+});
+
+client.on(Events.MessageReactionRemove, async (reaction, user) => {
+  await handleReactionRemove(reaction, user).catch(() => {});
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {
