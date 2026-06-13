@@ -217,6 +217,16 @@ export async function handleGiveawayCommand(
     if (cmd === "giveaway-setup") {
       const sub = interaction.options.getSubcommand();
 
+      // channel / addrole / removerole are owner-only
+      const isOwner = interaction.user.id === interaction.guild.ownerId;
+      if (["channel", "addrole", "removerole"].includes(sub) && !isOwner) {
+        await interaction.reply({
+          content: "❌ Only the server owner can use this command.",
+          flags: 64,
+        });
+        return;
+      }
+
       if (sub === "channel") {
         const ch = interaction.options.getChannel("channel", true);
         await setGiveawayChannel(guildId, ch.id);
