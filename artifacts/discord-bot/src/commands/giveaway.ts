@@ -213,6 +213,11 @@ export async function handleGiveawayCommand(
   const member = interaction.member as GuildMember;
 
   try {
+    // Defer immediately so Discord's 3-second window never expires.
+    // The DB (Neon) can take a few seconds to wake from idle — without deferring
+    // first any DB call that cold-starts will cause "The application did not respond".
+    await interaction.deferReply({ ephemeral: true });
+
     // ── /giveaway-setup ─────────────────────────────────────────────────────
     if (cmd === "giveaway-setup") {
       const sub = interaction.options.getSubcommand();
@@ -220,9 +225,8 @@ export async function handleGiveawayCommand(
       // channel / addrole / removerole are owner-only
       const isOwner = interaction.user.id === interaction.guild.ownerId;
       if (["channel", "addrole", "removerole"].includes(sub) && !isOwner) {
-        await interaction.reply({
+        await interaction.editReply({
           content: "❌ Only the server owner can use this command.",
-          flags: 64,
         });
         return;
       }
@@ -230,27 +234,26 @@ export async function handleGiveawayCommand(
       if (sub === "channel") {
         const ch = interaction.options.getChannel("channel", true);
         await setGiveawayChannel(guildId, ch.id);
-        await interaction.reply({ content: `✅ Giveaway channel set to <#${ch.id}>.`, flags: 64 });
+        await interaction.editReply({ content: `✅ Giveaway channel set to <#${ch.id}>.` });
 
       } else if (sub === "pingrole") {
         const role = interaction.options.getRole("role");
         await setGiveawayPingRole(guildId, role?.id ?? null);
-        await interaction.reply({
+        await interaction.editReply({
           content: role
             ? `✅ Giveaways will now ping **${role.name}** when they start.`
             : "✅ Giveaway ping role cleared — no role will be pinged.",
-          flags: 64,
         });
 
       } else if (sub === "addrole") {
         const role = interaction.options.getRole("role", true);
         await addGiveawayRole(guildId, role.id);
-        await interaction.reply({ content: `✅ **${role.name}** can now start giveaways.`, flags: 64 });
+        await interaction.editReply({ content: `✅ **${role.name}** can now start giveaways.` });
 
       } else if (sub === "removerole") {
         const role = interaction.options.getRole("role", true);
         await removeGiveawayRole(guildId, role.id);
-        await interaction.reply({ content: `✅ **${role.name}** can no longer start giveaways.`, flags: 64 });
+        await interaction.editReply({ content: `✅ **${role.name}** can no longer start giveaways.` });
 
       } else if (sub === "list") {
         const config = await getGiveawayConfig(guildId);
@@ -279,16 +282,15 @@ export async function handleGiveawayCommand(
             { name: "Allowed Roles", value: roleList }
           );
 
-        await interaction.reply({ embeds: [embed], flags: 64 });
+        await interaction.editReply({ embeds: [embed] });
       }
 
     // ── /giveaway ───────────────────────────────────────────────────────────
     } else if (cmd === "giveaway") {
       if (!(await canRunGiveaway(member, guildId))) {
-        await interaction.reply({
+        await interaction.editReply({
           content:
             "❌ You don't have permission to start giveaways. Ask an admin to add your role with `/giveaway-setup addrole`.",
-          flags: 64,
         });
         return;
       }
@@ -299,18 +301,16 @@ export async function handleGiveawayCommand(
       const ms = parseDuration(durationRaw);
 
       if (!ms) {
-        await interaction.reply({
+        await interaction.editReply({
           content: "❌ Invalid duration. Use a format like `30m`, `2h`, `1d`, `7d`.",
-          flags: 64,
         });
         return;
       }
 
       const config = await getGiveawayConfig(guildId);
       if (!config.channel_id) {
-        await interaction.reply({
+        await interaction.editReply({
           content: "❌ No giveaway channel set. Ask an admin to run `/giveaway-setup channel` first.",
-          flags: 64,
         });
         return;
       }
@@ -319,9 +319,8 @@ export async function handleGiveawayCommand(
         .fetch(config.channel_id)
         .catch(() => null)) as TextChannel | null;
       if (!giveawayCh) {
-        await interaction.reply({
+        await interaction.editReply({
           content: "❌ The configured giveaway channel no longer exists. Please set a new one.",
-          flags: 64,
         });
         return;
       }
@@ -341,8 +340,6 @@ export async function handleGiveawayCommand(
         )
         .setFooter({ text: `${winnerCount} winner(s) • Ends` })
         .setTimestamp(endsAt);
-
-      await interaction.deferReply({ flags: 64 });
 
       // Ping role if configured
       const pingContent = config.ping_role_id ? `<@&${config.ping_role_id}>` : undefined;
