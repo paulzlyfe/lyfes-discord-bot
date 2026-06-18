@@ -521,16 +521,19 @@ export async function updateIgnoredChannel(
   guildId: string,
   channelId: string,
   scope: IgnoredChannelScope
-): Promise<boolean> {
-  const { rowCount } = await pool.query(
+): Promise<{ oldScope: IgnoredChannelScope } | null> {
+  const { rows } = await pool.query<{ scope: string }>(
+    "SELECT scope FROM ignored_channels WHERE guild_id = $1 AND channel_id = $2",
+    [guildId, channelId]
+  );
+  if (rows.length === 0) return null;
+  const oldScope = rows[0].scope as IgnoredChannelScope;
+  await pool.query(
     "UPDATE ignored_channels SET scope = $1 WHERE guild_id = $2 AND channel_id = $3",
     [scope, guildId, channelId]
   );
-  if ((rowCount ?? 0) > 0) {
-    invalidateIgnoredChannelsCache(guildId);
-    return true;
-  }
-  return false;
+  invalidateIgnoredChannelsCache(guildId);
+  return { oldScope };
 }
 
 export async function removeIgnoredChannel(guildId: string, channelId: string): Promise<void> {

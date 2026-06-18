@@ -189,20 +189,20 @@ export async function handleConfigCommand(interaction: ChatInputCommandInteracti
       } else if (sub === "update") {
         const ch = interaction.options.getChannel("channel", true);
         const scope = interaction.options.getString("scope", true) as IgnoredChannelScope;
-        const updated = await updateIgnoredChannel(guildId, ch.id, scope);
-        if (!updated) {
+        const result = await updateIgnoredChannel(guildId, ch.id, scope);
+        if (!result) {
           await interaction.editReply({
             content: `❌ <#${ch.id}> is not ignored yet. Use \`/ignorechannel add\` first.`,
           });
           return;
         }
-        const scopeMsg: Record<IgnoredChannelScope, string> = {
-          both: "auto-mod and logging will both skip it",
-          automod: "auto-mod will skip it (logging still active)",
-          logging: "logging will skip it (auto-mod still active)",
+        const scopeLabel: Record<IgnoredChannelScope, string> = {
+          both: "auto-mod and logging",
+          automod: "auto-mod only",
+          logging: "logging only",
         };
         await interaction.editReply({
-          content: `✅ <#${ch.id}> ignore scope updated — ${scopeMsg[scope]}.`,
+          content: `✅ <#${ch.id}> ignore scope updated: **${scopeLabel[result.oldScope]}** → **${scopeLabel[scope]}**`,
         });
       } else if (sub === "remove") {
         const ch = interaction.options.getChannel("channel", true);
