@@ -8,6 +8,7 @@ import {
   getGuildConfig,
   getIgnoredChannels,
   removeIgnoredChannel,
+  updateIgnoredChannel,
   setAutomod,
   setBannedWords,
   setLogChannel,
@@ -68,6 +69,25 @@ export const ignorechannelCommand = new SlashCommandBuilder()
       .setDescription("Stop ignoring a channel")
       .addChannelOption((o) =>
         o.setName("channel").setDescription("Channel to stop ignoring").setRequired(true)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("update")
+      .setDescription("Change the ignore scope of an already-ignored channel")
+      .addChannelOption((o) =>
+        o.setName("channel").setDescription("Channel to update").setRequired(true)
+      )
+      .addStringOption((o) =>
+        o
+          .setName("scope")
+          .setDescription("New scope to apply")
+          .setRequired(true)
+          .addChoices(
+            { name: "both (logging + auto-mod)", value: "both" },
+            { name: "automod only", value: "automod" },
+            { name: "logging only", value: "logging" }
+          )
       )
   )
   .addSubcommand((sub) =>
@@ -165,6 +185,24 @@ export async function handleConfigCommand(interaction: ChatInputCommandInteracti
         };
         await interaction.editReply({
           content: `✅ <#${ch.id}> is now ignored — ${scopeMsg[scope]}.`,
+        });
+      } else if (sub === "update") {
+        const ch = interaction.options.getChannel("channel", true);
+        const scope = interaction.options.getString("scope", true) as IgnoredChannelScope;
+        const updated = await updateIgnoredChannel(guildId, ch.id, scope);
+        if (!updated) {
+          await interaction.editReply({
+            content: `❌ <#${ch.id}> is not ignored yet. Use \`/ignorechannel add\` first.`,
+          });
+          return;
+        }
+        const scopeMsg: Record<IgnoredChannelScope, string> = {
+          both: "auto-mod and logging will both skip it",
+          automod: "auto-mod will skip it (logging still active)",
+          logging: "logging will skip it (auto-mod still active)",
+        };
+        await interaction.editReply({
+          content: `✅ <#${ch.id}> ignore scope updated — ${scopeMsg[scope]}.`,
         });
       } else if (sub === "remove") {
         const ch = interaction.options.getChannel("channel", true);
