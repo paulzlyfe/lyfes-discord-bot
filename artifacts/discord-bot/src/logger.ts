@@ -197,14 +197,24 @@ export async function sendVoiceLog(
   const member = newState.member;
   if (!member || member.user.bot) return;
 
-  const channel = await getLogChannel(client, guild.id);
-  if (!channel) return;
-
   const joined = !oldState.channelId && !!newState.channelId;
   const left = !!oldState.channelId && !newState.channelId;
   const moved = !!oldState.channelId && !!newState.channelId && oldState.channelId !== newState.channelId;
 
   if (!joined && !left && !moved) return;
+
+  const ignoredChannels = await getIgnoredChannels(guild.id);
+  const isLoggingIgnored = (channelId: string) => {
+    const entry = ignoredChannels.find((c) => c.channelId === channelId);
+    return entry && (entry.scope === "logging" || entry.scope === "both");
+  };
+
+  if (joined && isLoggingIgnored(newState.channelId!)) return;
+  if (left && isLoggingIgnored(oldState.channelId!)) return;
+  if (moved && (isLoggingIgnored(oldState.channelId!) || isLoggingIgnored(newState.channelId!))) return;
+
+  const channel = await getLogChannel(client, guild.id);
+  if (!channel) return;
 
   const fields: { name: string; value: string; inline?: boolean }[] = [
     { name: "Member", value: `${member.user.tag} (<@${member.id}>)`, inline: true },

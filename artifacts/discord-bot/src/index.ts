@@ -17,7 +17,7 @@ import {
   handleReactionAdd,
   handleReactionRemove,
 } from "./commands/reactionroles.js";
-import { initDb, getGuildConfig } from "./db.js";
+import { initDb, getGuildConfig, getIgnoredChannels } from "./db.js";
 import { stopAndLeave } from "./music.js";
 import { startLivePoll } from "./live-poll.js";
 import {
@@ -179,6 +179,10 @@ client.on(Events.GuildMemberAdd, async (member) => {
   // Post to member log channel if configured
   const config = await getGuildConfig(member.guild.id);
   if (config.member_log_channel_id) {
+    const ignoredChannels = await getIgnoredChannels(member.guild.id);
+    const logChannelIgnored = ignoredChannels.find((c) => c.channelId === config.member_log_channel_id);
+    if (logChannelIgnored && (logChannelIgnored.scope === "logging" || logChannelIgnored.scope === "both")) return;
+
     const ch = member.guild.channels.cache.get(config.member_log_channel_id);
     if (ch?.isTextBased()) {
       const { EmbedBuilder } = await import("discord.js");
@@ -216,6 +220,10 @@ client.on(Events.GuildMemberAdd, async (member) => {
 client.on(Events.GuildMemberRemove, async (member) => {
   const config = await getGuildConfig(member.guild.id);
   if (!config.member_log_channel_id) return;
+
+  const ignoredChannels = await getIgnoredChannels(member.guild.id);
+  const logChannelIgnored = ignoredChannels.find((c) => c.channelId === config.member_log_channel_id);
+  if (logChannelIgnored && (logChannelIgnored.scope === "logging" || logChannelIgnored.scope === "both")) return;
 
   const ch = member.guild.channels.cache.get(config.member_log_channel_id);
   if (ch?.isTextBased()) {
