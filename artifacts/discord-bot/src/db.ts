@@ -288,6 +288,22 @@ export async function removeStreamerLink(guildId: string, userId: string): Promi
 
 // ─── Giveaway ─────────────────────────────────────────────────────────────────
 
+const GIVEAWAY_CONFIG_TTL_MS = 30_000;
+
+type GiveawayConfigValue = {
+  guild_id: string;
+  channel_id: string | null;
+  allowed_role_ids: string;
+  ping_role_id: string | null;
+};
+type GiveawayConfigCacheEntry = { value: GiveawayConfigValue; expiresAt: number };
+
+const giveawayConfigCache = new Map<string, GiveawayConfigCacheEntry>();
+
+function invalidateGiveawayConfigCache(guildId: string): void {
+  giveawayConfigCache.delete(guildId);
+}
+
 export type GiveawayRow = {
   id: number;
   guild_id: string;
@@ -300,18 +316,24 @@ export type GiveawayRow = {
   winners: string[];
 };
 
-export async function getGiveawayConfig(guildId: string) {
+export async function getGiveawayConfig(guildId: string): Promise<GiveawayConfigValue> {
+  const now = Date.now();
+  const cached = giveawayConfigCache.get(guildId);
+  if (cached && cached.expiresAt > now) {
+    return cached.value;
+  }
+
   await pool.query(
     "INSERT INTO giveaway_config (guild_id) VALUES ($1) ON CONFLICT DO NOTHING",
     [guildId]
   );
-  const { rows } = await pool.query<{
-    guild_id: string;
-    channel_id: string | null;
-    allowed_role_ids: string;
-    ping_role_id: string | null;
-  }>("SELECT * FROM giveaway_config WHERE guild_id = $1", [guildId]);
-  return rows[0];
+  const { rows } = await pool.query<GiveawayConfigValue>(
+    "SELECT * FROM giveaway_config WHERE guild_id = $1",
+    [guildId]
+  );
+  const value = rows[0];
+  giveawayConfigCache.set(guildId, { value, expiresAt: now + GIVEAWAY_CONFIG_TTL_MS });
+  return value;
 }
 
 export async function setGiveawayChannel(guildId: string, channelId: string): Promise<void> {
@@ -321,6 +343,7 @@ export async function setGiveawayChannel(guildId: string, channelId: string): Pr
      ON CONFLICT (guild_id) DO UPDATE SET channel_id = EXCLUDED.channel_id`,
     [guildId, channelId]
   );
+  invalidateGiveawayConfigCache(guildId);
 }
 
 export async function addGiveawayRole(guildId: string, roleId: string): Promise<void> {
@@ -331,6 +354,7 @@ export async function addGiveawayRole(guildId: string, roleId: string): Promise<
     "UPDATE giveaway_config SET allowed_role_ids = $1 WHERE guild_id = $2",
     [JSON.stringify(current), guildId]
   );
+  invalidateGiveawayConfigCache(guildId);
 }
 
 export async function removeGiveawayRole(guildId: string, roleId: string): Promise<void> {
@@ -341,6 +365,7 @@ export async function removeGiveawayRole(guildId: string, roleId: string): Promi
     "UPDATE giveaway_config SET allowed_role_ids = $1 WHERE guild_id = $2",
     [JSON.stringify(updated), guildId]
   );
+  invalidateGiveawayConfigCache(guildId);
 }
 
 export async function createGiveaway(
@@ -404,6 +429,7 @@ export async function setGiveawayPingRole(guildId: string, roleId: string | null
      ON CONFLICT (guild_id) DO UPDATE SET ping_role_id = EXCLUDED.ping_role_id`,
     [guildId, roleId]
   );
+  invalidateGiveawayConfigCache(guildId);
 }
 
 // ─── Reaction roles ───────────────────────────────────────────────────────────
