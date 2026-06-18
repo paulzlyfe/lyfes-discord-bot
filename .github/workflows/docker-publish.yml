@@ -45,3 +45,8 @@ jobs:
               -e DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }} \
               -e DATABASE_URL='${{ secrets.DATABASE_URL }}' \
               paulzlyfe/lyfe-bot:latest
+            docker run --rm \
+              -e DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }} \
+              -e DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }} \
+              paulzlyfe/lyfe-bot:latest \
+              node --import tsx/esm src/deploy-commands.ts
