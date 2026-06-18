@@ -125,6 +125,31 @@ export async function initDb(): Promise<void> {
   `);
 }
 
+// ─── In-process caches ────────────────────────────────────────────────────────
+//
+// SINGLE-INSTANCE ASSUMPTION
+// All caches below (guildConfigCache, giveawayConfigCache, ignoredChannelsCache)
+// are plain JavaScript Maps that live in this Node.js process's heap.
+//
+// This is fine as long as the bot runs as exactly one process at a time, which
+// is the expected deployment model (one Fly.io Machine / one Docker container).
+//
+// If you ever scale to multiple concurrent instances (e.g. blue/green deploy
+// overlap, horizontal scaling, or a hot-restart race where two processes briefly
+// coexist), the caches will diverge: an invalidation triggered by instance A
+// won't reach instance B, which will continue serving its cached (stale) copy
+// for up to the TTL window (currently 30 s).
+//
+// Mitigations when multi-instance becomes necessary:
+//   • Redis pub/sub: publish an invalidation event on every write; each instance
+//     subscribes and deletes the local cache entry.
+//   • Drop the cache entirely and rely on the DB for every read (safe but adds
+//     latency / DB load).
+//   • Use a shared cache store (Redis, Valkey) that all instances read from.
+//
+// Until then, keep this file's instances to exactly one running process.
+// ──────────────────────────────────────────────────────────────────────────────
+
 const GUILD_CONFIG_TTL_MS = 30_000;
 
 type GuildConfigValue = {
