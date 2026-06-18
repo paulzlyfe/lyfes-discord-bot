@@ -445,12 +445,31 @@ export async function isReactionRoleMessage(messageId: string): Promise<boolean>
 
 export type IgnoredChannelScope = "both" | "automod" | "logging";
 
-export async function getIgnoredChannels(guildId: string): Promise<{ channelId: string; scope: IgnoredChannelScope }[]> {
+const IGNORED_CHANNELS_TTL_MS = 30_000;
+
+type IgnoredChannelEntry = { channelId: string; scope: IgnoredChannelScope };
+type CacheEntry = { value: IgnoredChannelEntry[]; expiresAt: number };
+
+const ignoredChannelsCache = new Map<string, CacheEntry>();
+
+function invalidateIgnoredChannelsCache(guildId: string): void {
+  ignoredChannelsCache.delete(guildId);
+}
+
+export async function getIgnoredChannels(guildId: string): Promise<IgnoredChannelEntry[]> {
+  const now = Date.now();
+  const cached = ignoredChannelsCache.get(guildId);
+  if (cached && cached.expiresAt > now) {
+    return cached.value;
+  }
+
   const { rows } = await pool.query<{ channel_id: string; scope: string }>(
     "SELECT channel_id, scope FROM ignored_channels WHERE guild_id = $1",
     [guildId]
   );
-  return rows.map((r) => ({ channelId: r.channel_id, scope: r.scope as IgnoredChannelScope }));
+  const value = rows.map((r) => ({ channelId: r.channel_id, scope: r.scope as IgnoredChannelScope }));
+  ignoredChannelsCache.set(guildId, { value, expiresAt: now + IGNORED_CHANNELS_TTL_MS });
+  return value;
 }
 
 export async function addIgnoredChannel(
@@ -464,6 +483,7 @@ export async function addIgnoredChannel(
      ON CONFLICT (guild_id, channel_id) DO UPDATE SET scope = EXCLUDED.scope`,
     [guildId, channelId, scope]
   );
+  invalidateIgnoredChannelsCache(guildId);
 }
 
 export async function removeIgnoredChannel(guildId: string, channelId: string): Promise<void> {
@@ -471,4 +491,5 @@ export async function removeIgnoredChannel(guildId: string, channelId: string): 
     "DELETE FROM ignored_channels WHERE guild_id = $1 AND channel_id = $2",
     [guildId, channelId]
   );
+  invalidateIgnoredChannelsCache(guildId);
 }
