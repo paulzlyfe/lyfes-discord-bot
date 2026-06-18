@@ -1,5 +1,5 @@
 import { EmbedBuilder, Guild, Message, PermissionFlagsBits } from "discord.js";
-import { addWarning, getGuildConfig, logAction } from "./db.js";
+import { addWarning, getGuildConfig, getIgnoredChannels, logAction } from "./db.js";
 
 const LUCKY_ONES_ROLE_ID = "1506445605981913199";
 
@@ -117,6 +117,9 @@ export async function runAutomod(message: Message) {
 
   const config = await getGuildConfig(message.guild.id);
   if (!config.automod_enabled) return;
+
+  const ignoredChannels = await getIgnoredChannels(message.guild.id);
+  if (ignoredChannels.includes(message.channelId)) return;
 
   if (isExempt(message)) return;
 

@@ -14,7 +14,7 @@ import {
   PermissionsBitField,
   Guild,
 } from "discord.js";
-import { getGuildConfig } from "./db.js";
+import { getGuildConfig, getIgnoredChannels } from "./db.js";
 
 const HARDCODED_LOG_CHANNEL = "1506457782742679752";
 
@@ -125,6 +125,9 @@ export async function sendMessageDeleteLog(
 ) {
   if (!message.guild || message.author?.bot) return;
 
+  const ignoredChannels = await getIgnoredChannels(message.guild.id);
+  if (ignoredChannels.includes(message.channelId)) return;
+
   const channel = await getLogChannel(client, message.guild.id);
   if (!channel) return;
 
@@ -159,6 +162,9 @@ export async function sendMessageEditLog(
 ) {
   if (!newMessage.guild || newMessage.author?.bot) return;
   if (oldMessage.content === newMessage.content) return;
+
+  const ignoredChannels = await getIgnoredChannels(newMessage.guild.id);
+  if (ignoredChannels.includes(newMessage.channelId)) return;
 
   const channel = await getLogChannel(client, newMessage.guild.id);
   if (!channel) return;

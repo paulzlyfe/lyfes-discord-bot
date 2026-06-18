@@ -39,7 +39,7 @@ const MUSIC_COMMANDS = new Set([
 ]);
 
 const CONFIG_COMMANDS = new Set([
-  "setlog", "setmemberlog", "automod", "bannedwords",
+  "setlog", "setmemberlog", "automod", "bannedwords", "ignorechannel",
 ]);
 
 const UTILITY_COMMANDS = new Set([

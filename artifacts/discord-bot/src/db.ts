@@ -112,6 +112,12 @@ export async function initDb(): Promise<void> {
       role_id TEXT NOT NULL,
       UNIQUE (message_id, emoji)
     );
+
+    CREATE TABLE IF NOT EXISTS ignored_channels (
+      guild_id TEXT NOT NULL,
+      channel_id TEXT NOT NULL,
+      PRIMARY KEY (guild_id, channel_id)
+    );
   `);
 }
 
@@ -429,4 +435,28 @@ export async function isReactionRoleMessage(messageId: string): Promise<boolean>
     [messageId]
   );
   return rows.length > 0;
+}
+
+// ─── Ignored channels ─────────────────────────────────────────────────────────
+
+export async function getIgnoredChannels(guildId: string): Promise<string[]> {
+  const { rows } = await pool.query<{ channel_id: string }>(
+    "SELECT channel_id FROM ignored_channels WHERE guild_id = $1",
+    [guildId]
+  );
+  return rows.map((r) => r.channel_id);
+}
+
+export async function addIgnoredChannel(guildId: string, channelId: string): Promise<void> {
+  await pool.query(
+    "INSERT INTO ignored_channels (guild_id, channel_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+    [guildId, channelId]
+  );
+}
+
+export async function removeIgnoredChannel(guildId: string, channelId: string): Promise<void> {
+  await pool.query(
+    "DELETE FROM ignored_channels WHERE guild_id = $1 AND channel_id = $2",
+    [guildId, channelId]
+  );
 }

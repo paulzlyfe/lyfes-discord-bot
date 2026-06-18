@@ -25,6 +25,7 @@ import {
 import {
   automodCommand,
   bannedwordsCommand,
+  ignorechannelCommand,
   setlogCommand,
   setmemberlogCommand,
 } from "./commands/config.js";
@@ -60,6 +61,7 @@ const commands = [
   setmemberlogCommand,
   automodCommand,
   bannedwordsCommand,
+  ignorechannelCommand,
   pingCommand,
   userinfoCommand,
   setstreamerCommand,

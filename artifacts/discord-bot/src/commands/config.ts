@@ -4,7 +4,10 @@ import {
   SlashCommandBuilder,
 } from "discord.js";
 import {
+  addIgnoredChannel,
   getGuildConfig,
+  getIgnoredChannels,
+  removeIgnoredChannel,
   setAutomod,
   setBannedWords,
   setLogChannel,
@@ -33,6 +36,30 @@ export const automodCommand = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .addBooleanOption((o) =>
     o.setName("enabled").setDescription("Enable or disable").setRequired(true)
+  );
+
+export const ignorechannelCommand = new SlashCommandBuilder()
+  .setName("ignorechannel")
+  .setDescription("Manage channels ignored by logging and auto-mod")
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+  .addSubcommand((sub) =>
+    sub
+      .setName("add")
+      .setDescription("Ignore a channel (logging and auto-mod will skip it)")
+      .addChannelOption((o) =>
+        o.setName("channel").setDescription("Channel to ignore").setRequired(true)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("remove")
+      .setDescription("Stop ignoring a channel")
+      .addChannelOption((o) =>
+        o.setName("channel").setDescription("Channel to stop ignoring").setRequired(true)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub.setName("list").setDescription("List all ignored channels")
   );
 
 export const bannedwordsCommand = new SlashCommandBuilder()
@@ -99,13 +126,37 @@ export async function handleConfigCommand(interaction: ChatInputCommandInteracti
         await setBannedWords(guildId, filtered);
         await interaction.reply({ content: `✅ Removed \`${word}\` from the banned words list.`, ephemeral: true });
       }
+    } else if (cmd === "ignorechannel") {
+      await interaction.deferReply({ flags: 64 });
+      const sub = interaction.options.getSubcommand();
+
+      if (sub === "list") {
+        const ids = await getIgnoredChannels(guildId);
+        await interaction.editReply({
+          content: ids.length === 0
+            ? "No channels are currently ignored."
+            : `**Ignored channels:**\n${ids.map((id) => `<#${id}>`).join("\n")}`,
+        });
+      } else if (sub === "add") {
+        const ch = interaction.options.getChannel("channel", true);
+        await addIgnoredChannel(guildId, ch.id);
+        await interaction.editReply({
+          content: `✅ <#${ch.id}> is now ignored — auto-mod and logging will skip it.`,
+        });
+      } else if (sub === "remove") {
+        const ch = interaction.options.getChannel("channel", true);
+        await removeIgnoredChannel(guildId, ch.id);
+        await interaction.editReply({
+          content: `✅ <#${ch.id}> is no longer ignored.`,
+        });
+      }
     }
   } catch (err: any) {
     const msg = `❌ ${err.message}`;
     if (interaction.replied || interaction.deferred) {
       await interaction.editReply({ content: msg }).catch(() => {});
     } else {
-      await interaction.reply({ content: msg, ephemeral: true }).catch(() => {});
+      await interaction.reply({ content: msg, flags: 64 }).catch(() => {});
     }
   }
 }
