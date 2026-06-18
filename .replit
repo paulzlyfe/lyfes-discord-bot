@@ -9,6 +9,25 @@ args = ["pnpm", "store", "prune"]
 env = { "CI" = "true" }
 
 [workflows]
+runButton = "artifacts/discord-bot: Discord Bot"
+
+[[workflows.workflow]]
+name = "artifacts/discord-bot: Discord Bot"
+author = "agent"
+mode = "sequential"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+artifactId = "artifacts/discord-bot"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/discord-bot run start"
+cwd = "./artifacts/discord-bot"
+waitForPort = 3000
+
+[workflows.workflow.tasks.env]
+PORT = "3000"
 
 [agent]
 stack = "PNPM_WORKSPACE"
