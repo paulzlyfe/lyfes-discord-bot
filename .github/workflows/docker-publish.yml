@@ -26,3 +26,23 @@ jobs:
           file: artifacts/discord-bot/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/lyfe-bot:latest
+
+      - name: Deploy to Google Cloud VM
+        continue-on-error: true
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.GCE_HOST }}
+          username: ${{ secrets.GCE_USERNAME }}
+          key: ${{ secrets.GCE_SSH_KEY }}
+          script: |
+            docker pull paulzlyfe/lyfe-bot:latest
+            docker stop lyfe-bot || true
+            docker rm lyfe-bot || true
+            docker run -d \
+              --name lyfe-bot \
+              --restart always \
+              -e DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }} \
+              -e FLY_APP_NAME=lyfe-moderation-bot \
+              -e DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }} \
+              -e DATABASE_URL='${{ secrets.DATABASE_URL }}' \
+              paulzlyfe/lyfe-bot:latest
