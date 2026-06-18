@@ -119,7 +119,8 @@ export async function runAutomod(message: Message) {
   if (!config.automod_enabled) return;
 
   const ignoredChannels = await getIgnoredChannels(message.guild.id);
-  if (ignoredChannels.includes(message.channelId)) return;
+  const ignoredEntry = ignoredChannels.find((c) => c.channelId === message.channelId);
+  if (ignoredEntry && (ignoredEntry.scope === "automod" || ignoredEntry.scope === "both")) return;
 
   if (isExempt(message)) return;
 

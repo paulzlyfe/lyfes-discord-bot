@@ -116,8 +116,12 @@ export async function initDb(): Promise<void> {
     CREATE TABLE IF NOT EXISTS ignored_channels (
       guild_id TEXT NOT NULL,
       channel_id TEXT NOT NULL,
+      scope TEXT NOT NULL DEFAULT 'both',
       PRIMARY KEY (guild_id, channel_id)
     );
+
+    -- Migration: add scope column if this table already existed without it
+    ALTER TABLE ignored_channels ADD COLUMN IF NOT EXISTS scope TEXT NOT NULL DEFAULT 'both';
   `);
 }
 
@@ -439,18 +443,26 @@ export async function isReactionRoleMessage(messageId: string): Promise<boolean>
 
 // ─── Ignored channels ─────────────────────────────────────────────────────────
 
-export async function getIgnoredChannels(guildId: string): Promise<string[]> {
-  const { rows } = await pool.query<{ channel_id: string }>(
-    "SELECT channel_id FROM ignored_channels WHERE guild_id = $1",
+export type IgnoredChannelScope = "both" | "automod" | "logging";
+
+export async function getIgnoredChannels(guildId: string): Promise<{ channelId: string; scope: IgnoredChannelScope }[]> {
+  const { rows } = await pool.query<{ channel_id: string; scope: string }>(
+    "SELECT channel_id, scope FROM ignored_channels WHERE guild_id = $1",
     [guildId]
   );
-  return rows.map((r) => r.channel_id);
+  return rows.map((r) => ({ channelId: r.channel_id, scope: r.scope as IgnoredChannelScope }));
 }
 
-export async function addIgnoredChannel(guildId: string, channelId: string): Promise<void> {
+export async function addIgnoredChannel(
+  guildId: string,
+  channelId: string,
+  scope: IgnoredChannelScope = "both"
+): Promise<void> {
   await pool.query(
-    "INSERT INTO ignored_channels (guild_id, channel_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-    [guildId, channelId]
+    `INSERT INTO ignored_channels (guild_id, channel_id, scope)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (guild_id, channel_id) DO UPDATE SET scope = EXCLUDED.scope`,
+    [guildId, channelId, scope]
   );
 }
 

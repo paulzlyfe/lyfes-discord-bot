@@ -12,6 +12,7 @@ import {
   setBannedWords,
   setLogChannel,
   setMemberLogChannel,
+  type IgnoredChannelScope,
 } from "../db.js";
 
 export const setlogCommand = new SlashCommandBuilder()
@@ -40,14 +41,25 @@ export const automodCommand = new SlashCommandBuilder()
 
 export const ignorechannelCommand = new SlashCommandBuilder()
   .setName("ignorechannel")
-  .setDescription("Manage channels ignored by logging and auto-mod")
+  .setDescription("Manage channels ignored by logging and/or auto-mod")
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .addSubcommand((sub) =>
     sub
       .setName("add")
-      .setDescription("Ignore a channel (logging and auto-mod will skip it)")
+      .setDescription("Ignore a channel for logging, auto-mod, or both")
       .addChannelOption((o) =>
         o.setName("channel").setDescription("Channel to ignore").setRequired(true)
+      )
+      .addStringOption((o) =>
+        o
+          .setName("scope")
+          .setDescription("What to disable for this channel (default: both)")
+          .setRequired(false)
+          .addChoices(
+            { name: "both (logging + auto-mod)", value: "both" },
+            { name: "automod only", value: "automod" },
+            { name: "logging only", value: "logging" }
+          )
       )
   )
   .addSubcommand((sub) =>
@@ -131,17 +143,28 @@ export async function handleConfigCommand(interaction: ChatInputCommandInteracti
       const sub = interaction.options.getSubcommand();
 
       if (sub === "list") {
-        const ids = await getIgnoredChannels(guildId);
+        const entries = await getIgnoredChannels(guildId);
+        const scopeLabel: Record<string, string> = {
+          both: "logging + auto-mod",
+          automod: "auto-mod only",
+          logging: "logging only",
+        };
         await interaction.editReply({
-          content: ids.length === 0
+          content: entries.length === 0
             ? "No channels are currently ignored."
-            : `**Ignored channels:**\n${ids.map((id) => `<#${id}>`).join("\n")}`,
+            : `**Ignored channels:**\n${entries.map((e) => `<#${e.channelId}> — ${scopeLabel[e.scope] ?? e.scope}`).join("\n")}`,
         });
       } else if (sub === "add") {
         const ch = interaction.options.getChannel("channel", true);
-        await addIgnoredChannel(guildId, ch.id);
+        const scope = (interaction.options.getString("scope") ?? "both") as IgnoredChannelScope;
+        await addIgnoredChannel(guildId, ch.id, scope);
+        const scopeMsg: Record<IgnoredChannelScope, string> = {
+          both: "auto-mod and logging will both skip it",
+          automod: "auto-mod will skip it (logging still active)",
+          logging: "logging will skip it (auto-mod still active)",
+        };
         await interaction.editReply({
-          content: `✅ <#${ch.id}> is now ignored — auto-mod and logging will skip it.`,
+          content: `✅ <#${ch.id}> is now ignored — ${scopeMsg[scope]}.`,
         });
       } else if (sub === "remove") {
         const ch = interaction.options.getChannel("channel", true);

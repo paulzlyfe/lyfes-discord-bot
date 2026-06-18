@@ -126,7 +126,8 @@ export async function sendMessageDeleteLog(
   if (!message.guild || message.author?.bot) return;
 
   const ignoredChannels = await getIgnoredChannels(message.guild.id);
-  if (ignoredChannels.includes(message.channelId)) return;
+  const ignoredEntry = ignoredChannels.find((c) => c.channelId === message.channelId);
+  if (ignoredEntry && (ignoredEntry.scope === "logging" || ignoredEntry.scope === "both")) return;
 
   const channel = await getLogChannel(client, message.guild.id);
   if (!channel) return;
@@ -164,7 +165,8 @@ export async function sendMessageEditLog(
   if (oldMessage.content === newMessage.content) return;
 
   const ignoredChannels = await getIgnoredChannels(newMessage.guild.id);
-  if (ignoredChannels.includes(newMessage.channelId)) return;
+  const ignoredEntry = ignoredChannels.find((c) => c.channelId === newMessage.channelId);
+  if (ignoredEntry && (ignoredEntry.scope === "logging" || ignoredEntry.scope === "both")) return;
 
   const channel = await getLogChannel(client, newMessage.guild.id);
   if (!channel) return;
