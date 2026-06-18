@@ -3,6 +3,8 @@ import {
   Events,
   GatewayIntentBits,
   Partials,
+  REST,
+  Routes,
 } from "discord.js";
 import { createServer } from "node:http";
 import { runAutomod } from "./automod.js";
@@ -17,6 +19,7 @@ import {
   handleReactionAdd,
   handleReactionRemove,
 } from "./commands/reactionroles.js";
+import { registerCommands } from "./deploy-commands.js";
 import { initDb, getGuildConfig, getIgnoredChannels } from "./db.js";
 import { stopAndLeave } from "./music.js";
 import { startLivePoll } from "./live-poll.js";
@@ -82,6 +85,10 @@ client.once(Events.ClientReady, async (c) => {
   c.user.setActivity("Hard Knock Lyfe");
   startLivePoll(c);
   await resumePendingGiveaways(c);
+  await registerCommands(
+    process.env.DISCORD_BOT_TOKEN!,
+    process.env.DISCORD_CLIENT_ID!
+  ).catch((e) => console.error("[commands] Failed to register slash commands:", e));
 
   // Log voice encryption status so we can verify the right library is loaded on Railway
   try {

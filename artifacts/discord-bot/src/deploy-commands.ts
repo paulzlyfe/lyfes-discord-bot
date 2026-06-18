@@ -34,9 +34,6 @@ import { setstreamerCommand, goliveCommand, offairCommand, removestreamerCommand
 import { giveawayCommand, giveawaySetupCommand } from "./commands/giveaway.js";
 import { reactionRolesCommand, setReactionRoleCommand } from "./commands/reactionroles.js";
 
-const token = process.env.DISCORD_BOT_TOKEN!;
-const clientId = process.env.DISCORD_CLIENT_ID!;
-
 const commands = [
   banCommand,
   unbanCommand,
@@ -74,8 +71,16 @@ const commands = [
   setReactionRoleCommand,
 ].map((c) => c.toJSON());
 
-const rest = new REST().setToken(token);
+export async function registerCommands(token: string, clientId: string): Promise<void> {
+  const rest = new REST().setToken(token);
+  console.log("[commands] Registering slash commands with Discord...");
+  await rest.put(Routes.applicationCommands(clientId), { body: commands });
+  console.log("[commands] ✅ Slash commands registered globally.");
+}
 
-console.log("Registering slash commands...");
-await rest.put(Routes.applicationCommands(clientId), { body: commands });
-console.log("✅ Slash commands registered globally.");
+// Allow running as a standalone script: node --import tsx/esm src/deploy-commands.ts
+const token = process.env.DISCORD_BOT_TOKEN;
+const clientId = process.env.DISCORD_CLIENT_ID;
+if (token && clientId) {
+  await registerCommands(token, clientId);
+}
