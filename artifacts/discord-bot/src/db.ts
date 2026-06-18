@@ -125,7 +125,32 @@ export async function initDb(): Promise<void> {
   `);
 }
 
-export async function getGuildConfig(guildId: string) {
+const GUILD_CONFIG_TTL_MS = 30_000;
+
+type GuildConfigValue = {
+  guild_id: string;
+  log_channel_id: string | null;
+  member_log_channel_id: string | null;
+  automod_enabled: boolean;
+  banned_words: string[];
+  spam_threshold: number;
+  spam_window_ms: number;
+};
+type GuildConfigCacheEntry = { value: GuildConfigValue; expiresAt: number };
+
+const guildConfigCache = new Map<string, GuildConfigCacheEntry>();
+
+function invalidateGuildConfigCache(guildId: string): void {
+  guildConfigCache.delete(guildId);
+}
+
+export async function getGuildConfig(guildId: string): Promise<GuildConfigValue> {
+  const now = Date.now();
+  const cached = guildConfigCache.get(guildId);
+  if (cached && cached.expiresAt > now) {
+    return cached.value;
+  }
+
   await pool.query(
     "INSERT INTO guild_config (guild_id) VALUES ($1) ON CONFLICT DO NOTHING",
     [guildId]
@@ -140,11 +165,13 @@ export async function getGuildConfig(guildId: string) {
     spam_window_ms: number;
   }>("SELECT * FROM guild_config WHERE guild_id = $1", [guildId]);
   const row = rows[0];
-  return {
+  const value: GuildConfigValue = {
     ...row,
     banned_words: JSON.parse(row.banned_words || "[]") as string[],
     automod_enabled: Boolean(row.automod_enabled),
   };
+  guildConfigCache.set(guildId, { value, expiresAt: now + GUILD_CONFIG_TTL_MS });
+  return value;
 }
 
 export async function setLogChannel(guildId: string, channelId: string): Promise<void> {
@@ -152,6 +179,7 @@ export async function setLogChannel(guildId: string, channelId: string): Promise
     "UPDATE guild_config SET log_channel_id = $1 WHERE guild_id = $2",
     [channelId, guildId]
   );
+  invalidateGuildConfigCache(guildId);
 }
 
 export async function setMemberLogChannel(guildId: string, channelId: string): Promise<void> {
@@ -159,6 +187,7 @@ export async function setMemberLogChannel(guildId: string, channelId: string): P
     "UPDATE guild_config SET member_log_channel_id = $1 WHERE guild_id = $2",
     [channelId, guildId]
   );
+  invalidateGuildConfigCache(guildId);
 }
 
 export async function setBannedWords(guildId: string, words: string[]): Promise<void> {
@@ -166,6 +195,7 @@ export async function setBannedWords(guildId: string, words: string[]): Promise<
     "UPDATE guild_config SET banned_words = $1 WHERE guild_id = $2",
     [JSON.stringify(words), guildId]
   );
+  invalidateGuildConfigCache(guildId);
 }
 
 export async function setAutomod(guildId: string, enabled: boolean): Promise<void> {
@@ -173,6 +203,7 @@ export async function setAutomod(guildId: string, enabled: boolean): Promise<voi
     "UPDATE guild_config SET automod_enabled = $1 WHERE guild_id = $2",
     [enabled, guildId]
   );
+  invalidateGuildConfigCache(guildId);
 }
 
 export async function addWarning(guildId: string, userId: string, moderatorId: string, reason: string): Promise<void> {
