@@ -1,27 +1,38 @@
 ---
-name: Discord voice encryption library
-description: Why @discordjs/voice "operation was aborted" on cloud hosts, and the fix
+name: Discord voice encryption and connection issues
+description: Voice close code 4017 root cause and fix; libsodium-wrappers requirement
 ---
 
-# @discordjs/voice encryption on cloud hosts (Railway etc.)
+# @discordjs/voice connection issues on cloud hosts
 
-**Symptom:** `/play` fails with "The operation was aborted" — this is `entersState(connection, VoiceConnectionStatus.Ready, timeout)` timing out because the voice handshake never completes.
+## Close code 4017 — VOICE_STATE_UPDATE double-delivery
 
-**Root cause:** As of late 2024 Discord requires the newer AEAD voice encryption modes (`aead_xchacha20poly1305_rtpsize` / `aead_aes256_gcm_rtpsize`). `@discordjs/voice` 0.18 discovers an encryption lib by dynamic-importing, in order: `sodium-native`, `sodium`, `libsodium-wrappers`, `@stablelib/xchacha20poly1305`, `@noble/ciphers/chacha`. **`tweetnacl` is NOT in that list** and does nothing. If none import, encryption falls back to a thrown error and the connection never reaches Ready.
+**Symptom:** `/play` joins voice channel (Discord UI shows bot in channel), stays "thinking" forever, logs show infinite loop: `signalling → connecting → signalling` with `[voice-net-close] code=4017`.
 
-`sodium-native` is a native module; its prebuilt binary can fail to load on a given cloud host, leaving no working lib.
+**Root cause:** Both the custom `raw` event listener AND the builtin `guild.voiceAdapterCreator` adapter deliver `VOICE_STATE_UPDATE` to `handleStateUpdate`. This causes `configureNetworking()` to open two WebSocket connections simultaneously. Both try to IDENTIFY with the same session_id. Discord closes both with code 4017 (session conflict).
 
-**Fix (encryption):** add `libsodium-wrappers` (pure WASM, no native build) to the bot package's `dependencies`. It's a guaranteed fallback that works on any host. Keep `sodium-native` (faster when it loads); the discovery loop falls through to libsodium-wrappers if sodium-native fails.
+**Fix:** Add a `seenStateKeys = new Set<string>()` keyed on `${session_id}|${channel_id}` inside `buildVoiceAdapter`, exactly like the existing `seenServerKeys` dedup for `VOICE_SERVER_UPDATE`. Clear `seenStateKeys` in `resetForReconnect`. The raw listener always fires first (before `handlePacket`), so it wins the race; the builtin adapter's delivery is silently skipped.
 
-**Fix (stuck at signalling — Railway/cloud):** the discord.js `client.voice.adapters` pipeline silently fails to deliver `VOICE_SERVER_UPDATE` to `@discordjs/voice` in some cloud environments. Symptoms: bot appears in the voice channel in Discord UI, but `entersState(Ready)` times out at `signalling` — no permissions error, shard is ready.
+**Why:** `events.Raw` fires before `handlePacket`. Both paths reach `handleStateUpdate`. Without dedup, two concurrent WebSocket sessions are opened for the same session_id → Discord code 4017.
 
-Root cause: `handlePacket` → `VOICE_SERVER_UPDATE.js` → `client.voice.adapters.get(guildId)?.onVoiceServerUpdate()` lookup returns undefined. `Events.Raw` fires BEFORE `handlePacket`, so a custom `DiscordGatewayAdapterCreator` that subscribes to `Events.Raw` directly receives the event exactly once, bypassing the broken adapter map.
+**How to apply:** In `buildVoiceAdapter` in `music.ts`, ensure `seenStateKeys` is declared alongside `seenServerKeys` and cleared in `resetForReconnect`. The dedup check must be at the TOP of `handleStateUpdate` before calling `methods.onVoiceStateUpdate`.
 
-Solution — replace `voiceAdapterCreator: voiceChannel.guild.voiceAdapterCreator` with a custom `buildVoiceAdapter(client, guild)` that:
-- subscribes `client.on(Events.Raw, onRaw)` and calls `methods.onVoiceServerUpdate` / `methods.onVoiceStateUpdate` directly
-- uses `(guild.shard as any).send(data)` for sendPayload
-- calls `client.off(Events.Raw, onRaw)` on destroy
+---
 
-**Why:** `Events.Raw` is emitted in `WebSocketManager.attachEvents()` before `handlePacket`, guaranteeing exactly-once delivery without the fragile adapter map lookup.
+## Encryption library — "operation was aborted"
 
-**How to apply / verify:** Railway logs should show `[voice] ✓ VOICE_SERVER_UPDATE received` and `[voice] signalling → connecting → ready` after the fix.
+**Symptom:** `entersState(Ready)` times out — voice handshake never completes.
+
+**Root cause:** Discord requires AEAD voice encryption modes (`aead_xchacha20_poly1305_rtpsize` / `aead_aes256_gcm_rtpsize`). `tweetnacl` is NOT in @discordjs/voice 0.18's discovery list.
+
+**Fix:** Add `libsodium-wrappers` (pure WASM, works on any host) to `dependencies`. Keep `sodium-native` as the faster option; the discovery loop falls through to libsodium-wrappers if sodium-native fails.
+
+---
+
+## Stuck at signalling — raw event adapter
+
+**Symptom:** Bot appears in voice channel in Discord UI, but `entersState(Ready)` times out stuck at `signalling` — `VOICE_SERVER_UPDATE` never arrives via normal path.
+
+**Root cause:** `client.voice.adapters.get(guildId)?.onVoiceServerUpdate()` lookup returns undefined on some cloud hosts.
+
+**Fix:** Use custom `buildVoiceAdapter` that subscribes `client.on('raw', onRaw)` and calls methods directly, bypassing the adapter map lookup.

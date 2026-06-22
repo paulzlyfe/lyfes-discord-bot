@@ -33,6 +33,12 @@ function buildVoiceAdapter(client: Client, guild: Guild): DiscordGatewayAdapterC
   return (methods) => {
     // Dedup VOICE_SERVER_UPDATE by endpoint+token; resets on new values (reconnect).
     const seenServerKeys = new Set<string>();
+    // Dedup VOICE_STATE_UPDATE by session_id+channel_id.
+    // Both the raw listener and the builtin adapter fire for the same event; without
+    // dedup, handleStateUpdate runs twice — opening a second WebSocket mid-IDENTIFY.
+    // Discord sees two IDENTIFY requests on the same session and closes both with
+    // close code 4017 (session conflict), causing an infinite reconnect loop.
+    const seenStateKeys = new Set<string>();
     let lastServerPacket: Parameters<typeof methods.onVoiceServerUpdate>[0] | null = null;
     // Allow exactly one ordering-fix re-trigger per server update.
     let retriggered = false;
@@ -44,6 +50,7 @@ function buildVoiceAdapter(client: Client, guild: Guild): DiscordGatewayAdapterC
       // values, and the re-trigger can't fire either (retriggered=true), so the bot
       // gets stuck in Signalling with no configureNetworking() call and times out.
       seenServerKeys.clear();
+      seenStateKeys.clear();
       retriggered = false;
       console.log("[voice] resetForReconnect — cleared dedup state");
     }
@@ -61,6 +68,15 @@ function buildVoiceAdapter(client: Client, guild: Guild): DiscordGatewayAdapterC
     }
 
     function handleStateUpdate(data: Parameters<typeof methods.onVoiceStateUpdate>[0]) {
+      // Deduplicate by session_id + channel_id — both raw and builtin deliver this
+      // event, but only the first delivery should reach @discordjs/voice internals.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const key = `${data.session_id ?? ""}|${(data as any).channel_id ?? "null"}`;
+      if (seenStateKeys.has(key)) {
+        console.log("[voice] Skipping duplicate VOICE_STATE_UPDATE (session:", data.session_id, ")");
+        return;
+      }
+      seenStateKeys.add(key);
       console.log("[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session:", data.session_id, ")");
       methods.onVoiceStateUpdate(data);
       // ORDERING FIX: if server arrived before state, configureNetworking() bailed because
