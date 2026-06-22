@@ -1,0 +1,1033 @@
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net-close] WebSocket closed by Discord — code=4017
+[voice-ws-close] code=[object Object] reason=""
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d07ebb1681e2c8c895552a0ca692c1e9 )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice-net] networking sub-state: 6 → 6
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice-net] networking sub-state: 0 → 1
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice-net] networking sub-state: 1 → 6
+[voice] connecting → destroyed
+[voice-ws-close] code=[object Object] reason=""
