@@ -1,0 +1,886 @@
+[voice] Dependency report:
+[voice] Joining channel "Lyfe’s Dungeon" (1506422479789228176) in guild 1506422478300516422
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] raw VOICE_SERVER_UPDATE — endpoint: c-dfw05-97e72e7d.discord.media
+[voice] ✓ VOICE_SERVER_UPDATE → addServerPacket (endpoint: c-dfw05-97e72e7d.discord.media)
+[voice] signalling → connecting
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] connecting → connecting
+[voice] connecting → signalling
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] raw VOICE_STATE_UPDATE — channel: 1506422479789228176 session: true
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] Re-triggering configureNetworking (server arrived before state)
+[voice] signalling → connecting
+[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session: d96a633bb9156180f3f7cacb455db90a )
+[voice] resetForReconnect — cleared dedup state
+[voice] sendPayload → sent ✓
+[voice] connecting → destroyed

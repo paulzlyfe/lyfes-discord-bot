@@ -10,7 +10,7 @@ import {
   VoiceConnectionStatus,
 } from "@discordjs/voice";
 import type { DiscordGatewayAdapterCreator } from "@discordjs/voice";
-import { Client, Events, Guild, GuildMember, TextChannel, VoiceChannel } from "discord.js";
+import { Events, Guild, GuildMember, TextChannel, VoiceChannel } from "discord.js";
 import { spawn, execFile } from "child_process";
 import { promisify } from "util";
 import { Readable } from "stream";
@@ -29,58 +29,41 @@ const execFileAsync = promisify(execFile);
  *    configureNetworking() exits early (state is null). We re-trigger it once per
  *    server-update after state is stored.
  */
-function buildVoiceAdapter(client: Client, guild: Guild): DiscordGatewayAdapterCreator {
+function buildVoiceAdapter(guild: Guild): DiscordGatewayAdapterCreator {
   return (methods) => {
-    // Dedup VOICE_SERVER_UPDATE by endpoint+token; resets on new values (reconnect).
+    // Dedup VOICE_SERVER_UPDATE by endpoint+token so repeated Discord retries
+    // don't open extra WebSockets. Reset on each OP4 (new join/reconnect attempt).
     const seenServerKeys = new Set<string>();
-    // Dedup VOICE_STATE_UPDATE by session_id+channel_id.
-    // Both the raw listener and the builtin adapter fire for the same event; without
-    // dedup, handleStateUpdate runs twice — opening a second WebSocket mid-IDENTIFY.
-    // Discord sees two IDENTIFY requests on the same session and closes both with
-    // close code 4017 (session conflict), causing an infinite reconnect loop.
-    const seenStateKeys = new Set<string>();
     let lastServerPacket: Parameters<typeof methods.onVoiceServerUpdate>[0] | null = null;
-    // Allow exactly one ordering-fix re-trigger per server update.
+    // Allow exactly one ordering-fix re-trigger per server update cycle.
     let retriggered = false;
 
     function resetForReconnect() {
-      // Clear dedup state so that the same endpoint+token from Discord is accepted
-      // fresh on each reconnect attempt. Without this, after the first failure the
-      // seenServerKeys set blocks subsequent VOICE_SERVER_UPDATEs with the same
-      // values, and the re-trigger can't fire either (retriggered=true), so the bot
-      // gets stuck in Signalling with no configureNetworking() call and times out.
       seenServerKeys.clear();
-      seenStateKeys.clear();
       retriggered = false;
       console.log("[voice] resetForReconnect — cleared dedup state");
     }
 
     function handleServerUpdate(data: Parameters<typeof methods.onVoiceServerUpdate>[0]) {
       const key = `${data.endpoint}|${data.token}`;
-      if (seenServerKeys.has(key)) return;
+      if (seenServerKeys.has(key)) {
+        console.log("[voice] Skipping duplicate VOICE_SERVER_UPDATE");
+        return;
+      }
       seenServerKeys.add(key);
       lastServerPacket = data;
-      retriggered = false; // new server packet — allow one re-trigger after state arrives
-      // Log the actual endpoint host (no token) so we can see which voice region is used
+      retriggered = false;
       const endpointHost = (data.endpoint ?? "").split(":")[0];
       console.log(`[voice] ✓ VOICE_SERVER_UPDATE → addServerPacket (endpoint: ${endpointHost})`);
       methods.onVoiceServerUpdate(data);
     }
 
     function handleStateUpdate(data: Parameters<typeof methods.onVoiceStateUpdate>[0]) {
-      // Deduplicate by session_id + channel_id — both raw and builtin deliver this
-      // event, but only the first delivery should reach @discordjs/voice internals.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const key = `${data.session_id ?? ""}|${(data as any).channel_id ?? "null"}`;
-      if (seenStateKeys.has(key)) {
-        console.log("[voice] Skipping duplicate VOICE_STATE_UPDATE (session:", data.session_id, ")");
-        return;
-      }
-      seenStateKeys.add(key);
       console.log("[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session:", data.session_id, ")");
       methods.onVoiceStateUpdate(data);
-      // ORDERING FIX: if server arrived before state, configureNetworking() bailed because
-      // state was null. Re-trigger it now that state is stored.
+      // ORDERING FIX: VOICE_SERVER_UPDATE often arrives before VOICE_STATE_UPDATE.
+      // @discordjs/voice's configureNetworking() bails if state is null when server
+      // arrives, so re-trigger it now that state is stored.
       if (lastServerPacket && !retriggered) {
         retriggered = true;
         console.log("[voice] Re-triggering configureNetworking (server arrived before state)");
@@ -88,51 +71,26 @@ function buildVoiceAdapter(client: Client, guild: Guild): DiscordGatewayAdapterC
       }
     }
 
-    // Use the built-in adapter so OP4 is sent via guild.shard (proven reliable)
-    // and our handlers are registered in client.voice.adapters for normal delivery.
-    const adapterMethods: typeof methods = {
+    // Use ONLY the builtin adapter — it delivers events exactly once via
+    // client.voice.adapters and sends OP4 through guild.shard reliably.
+    // A raw-event backup was tried previously but caused double delivery of
+    // VOICE_STATE_UPDATE, opening two WebSockets simultaneously and triggering
+    // Discord close code 4017 (session conflict) on every connect attempt.
+    const builtinAdapter = guild.voiceAdapterCreator({
       onVoiceServerUpdate: handleServerUpdate,
       onVoiceStateUpdate: handleStateUpdate,
       destroy: () => methods.destroy(),
-    };
-    const builtinAdapter = guild.voiceAdapterCreator(adapterMethods);
-
-    // Also subscribe to raw events as a backup delivery path.
-    // "raw" fires BEFORE handlePacket so this tends to win the race;
-    // the endpoint+token dedup prevents double-processing if both paths fire.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function onRaw(packet: any) {
-      const { t, d } = packet ?? {};
-      if (!t || !d) return;
-      if (t === "VOICE_SERVER_UPDATE" && d.guild_id === guild.id) {
-        const host = (d.endpoint ?? "").split(":")[0];
-        console.log(`[voice] raw VOICE_SERVER_UPDATE — endpoint: ${host}`);
-        handleServerUpdate(d as Parameters<typeof methods.onVoiceServerUpdate>[0]);
-      } else if (t === "VOICE_STATE_UPDATE" && d.guild_id === guild.id && d.user_id === client.user?.id) {
-        console.log("[voice] raw VOICE_STATE_UPDATE — channel:", d.channel_id, "session:", !!d.session_id);
-        handleStateUpdate(d as Parameters<typeof methods.onVoiceStateUpdate>[0]);
-      }
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (client as any).on("raw", onRaw);
+    });
 
     return {
       sendPayload: (data) => {
-        // OP 4 = voice state update (sent on each connect/reconnect attempt).
-        // Reset dedup state so the next VOICE_SERVER_UPDATE from Discord is
-        // always forwarded even if it carries the same endpoint+token.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((data as any)?.op === 4) resetForReconnect();
         const ok = builtinAdapter.sendPayload(data);
         console.log(`[voice] sendPayload → ${ok ? "sent ✓" : "FAILED (shard not ready?)"}`);
         return ok;
       },
-      destroy: () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (client as any).off("raw", onRaw);
-        builtinAdapter.destroy();
-      },
+      destroy: () => builtinAdapter.destroy(),
     };
   };
 }
@@ -215,7 +173,7 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
   const connection = joinVoiceChannel({
     channelId: voiceChannel.id,
     guildId: voiceChannel.guild.id,
-    adapterCreator: buildVoiceAdapter(voiceChannel.guild.client, voiceChannel.guild),
+    adapterCreator: buildVoiceAdapter(voiceChannel.guild),
     selfDeaf: false,
     selfMute: false,
   });
