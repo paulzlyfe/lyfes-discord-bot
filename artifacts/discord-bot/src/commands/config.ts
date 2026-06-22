@@ -114,7 +114,7 @@ export const bannedwordsCommand = new SlashCommandBuilder()
 
 export async function handleConfigCommand(interaction: ChatInputCommandInteraction) {
   if (!interaction.guild) {
-    await interaction.reply({ content: "Must be used in a server.", ephemeral: true });
+    await interaction.reply({ content: "Must be used in a server.", flags: 64 });
     return;
   }
 
@@ -125,17 +125,17 @@ export async function handleConfigCommand(interaction: ChatInputCommandInteracti
     if (cmd === "setlog") {
       const channel = interaction.options.getChannel("channel", true);
       await setLogChannel(guildId, channel.id);
-      await interaction.reply({ content: `✅ Mod logs will be sent to <#${channel.id}>.`, ephemeral: true });
+      await interaction.reply({ content: `✅ Mod logs will be sent to <#${channel.id}>.`, flags: 64 });
 
     } else if (cmd === "setmemberlog") {
       const channel = interaction.options.getChannel("channel", true);
       await setMemberLogChannel(guildId, channel.id);
-      await interaction.reply({ content: `✅ Member join/leave logs will be sent to <#${channel.id}>.`, ephemeral: true });
+      await interaction.reply({ content: `✅ Member join/leave logs will be sent to <#${channel.id}>.`, flags: 64 });
 
     } else if (cmd === "automod") {
       const enabled = interaction.options.getBoolean("enabled", true);
       await setAutomod(guildId, enabled);
-      await interaction.reply({ content: `✅ AutoMod is now **${enabled ? "enabled" : "disabled"}**.`, ephemeral: true });
+      await interaction.reply({ content: `✅ AutoMod is now **${enabled ? "enabled" : "disabled"}**.`, flags: 64 });
 
     } else if (cmd === "bannedwords") {
       const sub = interaction.options.getSubcommand();
@@ -145,18 +145,18 @@ export async function handleConfigCommand(interaction: ChatInputCommandInteracti
       if (sub === "list") {
         await interaction.reply({
           content: words.length === 0 ? "No banned words set." : `Banned words:\n${words.map((w) => `\`${w}\``).join(", ")}`,
-          ephemeral: true,
+          flags: 64,
         });
       } else if (sub === "add") {
         const word = interaction.options.getString("word", true).toLowerCase();
         if (!words.includes(word)) words.push(word);
         await setBannedWords(guildId, words);
-        await interaction.reply({ content: `✅ Added \`${word}\` to the banned words list.`, ephemeral: true });
+        await interaction.reply({ content: `✅ Added \`${word}\` to the banned words list.`, flags: 64 });
       } else if (sub === "remove") {
         const word = interaction.options.getString("word", true).toLowerCase();
         const filtered = words.filter((w) => w !== word);
         await setBannedWords(guildId, filtered);
-        await interaction.reply({ content: `✅ Removed \`${word}\` from the banned words list.`, ephemeral: true });
+        await interaction.reply({ content: `✅ Removed \`${word}\` from the banned words list.`, flags: 64 });
       }
     } else if (cmd === "ignorechannel") {
       await interaction.deferReply({ flags: 64 });

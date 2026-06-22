@@ -52,7 +52,7 @@ export const removestreamerCommand = new SlashCommandBuilder()
 
 export async function handleStreamingCommand(interaction: ChatInputCommandInteraction) {
   if (!interaction.guild) {
-    await interaction.reply({ content: "Must be used in a server.", ephemeral: true });
+    await interaction.reply({ content: "Must be used in a server.", flags: 64 });
     return;
   }
 
@@ -62,7 +62,7 @@ export async function handleStreamingCommand(interaction: ChatInputCommandIntera
   if (!hasAccess(member)) {
     await interaction.reply({
       content: "❌ You need the **Streamer** or **Owner** role to use this command.",
-      ephemeral: true,
+      flags: 64,
     });
     return;
   }
@@ -73,7 +73,7 @@ export async function handleStreamingCommand(interaction: ChatInputCommandIntera
       const url = interaction.options.getString("url", true);
 
       if (!url.startsWith("http://") && !url.startsWith("https://")) {
-        await interaction.reply({ content: "❌ Please provide a full URL including `https://`.", ephemeral: true });
+        await interaction.reply({ content: "❌ Please provide a full URL including `https://`.", flags: 64 });
         return;
       }
 
@@ -82,7 +82,7 @@ export async function handleStreamingCommand(interaction: ChatInputCommandIntera
       const platformLabel = platform === "youtube" ? "YouTube 🎬" : "Twitch 🟣";
       await interaction.reply({
         content: `✅ Your ${platformLabel} channel has been saved: <${url}>\n\nUse \`/golive\` whenever you start streaming to announce it!`,
-        ephemeral: true,
+        flags: 64,
       });
 
     } else if (cmd === "golive") {
@@ -91,14 +91,14 @@ export async function handleStreamingCommand(interaction: ChatInputCommandIntera
       if (!link) {
         await interaction.reply({
           content: "❌ You haven't set up your channel yet. Use `/setstreamer` first.",
-          ephemeral: true,
+          flags: 64,
         });
         return;
       }
 
       const alertChannel = interaction.guild.channels.cache.get(STREAM_ALERT_CHANNEL_ID) as TextChannel | undefined;
       if (!alertChannel) {
-        await interaction.reply({ content: "❌ Stream alert channel not found.", ephemeral: true });
+        await interaction.reply({ content: "❌ Stream alert channel not found.", flags: 64 });
         return;
       }
 
@@ -114,7 +114,7 @@ export async function handleStreamingCommand(interaction: ChatInputCommandIntera
         .setTimestamp();
 
       await alertChannel.send({ content: "@everyone", embeds: [embed] });
-      await interaction.reply({ content: `✅ Your stream has been announced in <#${STREAM_ALERT_CHANNEL_ID}>!`, ephemeral: true });
+      await interaction.reply({ content: `✅ Your stream has been announced in <#${STREAM_ALERT_CHANNEL_ID}>!`, flags: 64 });
 
     } else if (cmd === "offair") {
       const link = await getStreamerLink(interaction.guild.id, interaction.user.id);
@@ -122,7 +122,7 @@ export async function handleStreamingCommand(interaction: ChatInputCommandIntera
 
       const alertChannel = interaction.guild.channels.cache.get(STREAM_ALERT_CHANNEL_ID) as TextChannel | undefined;
       if (!alertChannel) {
-        await interaction.reply({ content: "❌ Stream alert channel not found.", ephemeral: true });
+        await interaction.reply({ content: "❌ Stream alert channel not found.", flags: 64 });
         return;
       }
 
@@ -142,18 +142,18 @@ export async function handleStreamingCommand(interaction: ChatInputCommandIntera
         .setTimestamp();
 
       await alertChannel.send({ embeds: [embed] });
-      await interaction.reply({ content: `✅ Stream ended message posted in <#${STREAM_ALERT_CHANNEL_ID}>!`, ephemeral: true });
+      await interaction.reply({ content: `✅ Stream ended message posted in <#${STREAM_ALERT_CHANNEL_ID}>!`, flags: 64 });
 
     } else if (cmd === "removestreamer") {
       const existing = await getStreamerLink(interaction.guild.id, interaction.user.id);
       if (!existing) {
-        await interaction.reply({ content: "❌ You don't have a linked channel to remove.", ephemeral: true });
+        await interaction.reply({ content: "❌ You don't have a linked channel to remove.", flags: 64 });
         return;
       }
       await removeStreamerLink(interaction.guild.id, interaction.user.id);
       await interaction.reply({
         content: `✅ Your linked **${existing.platform}** channel has been removed. Auto alerts and \`/golive\` will no longer work for you until you run \`/setstreamer\` again.`,
-        ephemeral: true,
+        flags: 64,
       });
     }
   } catch (err: any) {
@@ -161,7 +161,7 @@ export async function handleStreamingCommand(interaction: ChatInputCommandIntera
     if (interaction.replied || interaction.deferred) {
       await interaction.editReply({ content: msg }).catch(() => {});
     } else {
-      await interaction.reply({ content: msg, ephemeral: true }).catch(() => {});
+      await interaction.reply({ content: msg, flags: 64 }).catch(() => {});
     }
   }
 }

@@ -35,7 +35,7 @@ export async function handleUtilityCommand(interaction: ChatInputCommandInteract
 
   } else if (interaction.commandName === "userinfo") {
     if (!interaction.guild) {
-      await interaction.reply({ content: "Must be used in a server.", ephemeral: true });
+      await interaction.reply({ content: "Must be used in a server.", flags: 64 });
       return;
     }
 

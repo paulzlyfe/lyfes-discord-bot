@@ -100,7 +100,7 @@ export async function handleSearchSelect(interaction: StringSelectMenuInteractio
 
 export async function handleMusicCommand(interaction: ChatInputCommandInteraction) {
   if (!interaction.guild) {
-    await interaction.reply({ content: "Must be used in a server.", ephemeral: true });
+    await interaction.reply({ content: "Must be used in a server.", flags: 64 });
     return;
   }
 
@@ -132,24 +132,24 @@ export async function handleMusicCommand(interaction: ChatInputCommandInteractio
 
     } else if (cmd === "skip") {
       skipTrack(guildId);
-      await interaction.reply({ content: "⏭️ Skipped.", ephemeral: true });
+      await interaction.reply({ content: "⏭️ Skipped.", flags: 64 });
 
     } else if (cmd === "stop") {
       stopAndLeave(guildId);
-      await interaction.reply({ content: "⏹️ Stopped and left the voice channel.", ephemeral: true });
+      await interaction.reply({ content: "⏹️ Stopped and left the voice channel.", flags: 64 });
 
     } else if (cmd === "pause") {
       pauseTrack(guildId);
-      await interaction.reply({ content: "⏸️ Paused.", ephemeral: true });
+      await interaction.reply({ content: "⏸️ Paused.", flags: 64 });
 
     } else if (cmd === "resume") {
       resumeTrack(guildId);
-      await interaction.reply({ content: "▶️ Resumed.", ephemeral: true });
+      await interaction.reply({ content: "▶️ Resumed.", flags: 64 });
 
     } else if (cmd === "queue") {
       const q = getQueue(guildId);
       if (!q || q.tracks.length === 0) {
-        await interaction.reply({ content: "The queue is empty.", ephemeral: true });
+        await interaction.reply({ content: "The queue is empty.", flags: 64 });
         return;
       }
       const embed = new EmbedBuilder()
@@ -167,16 +167,16 @@ export async function handleMusicCommand(interaction: ChatInputCommandInteractio
     } else if (cmd === "loop") {
       const q = getQueue(guildId);
       if (!q) {
-        await interaction.reply({ content: "Nothing is playing.", ephemeral: true });
+        await interaction.reply({ content: "Nothing is playing.", flags: 64 });
         return;
       }
       setLoop(guildId, !q.loop);
-      await interaction.reply({ content: `🔁 Loop is now **${!q.loop ? "ON" : "OFF"}**.`, ephemeral: true });
+      await interaction.reply({ content: `🔁 Loop is now **${!q.loop ? "ON" : "OFF"}**.`, flags: 64 });
 
     } else if (cmd === "nowplaying") {
       const q = getQueue(guildId);
       if (!q || q.tracks.length === 0) {
-        await interaction.reply({ content: "Nothing is playing.", ephemeral: true });
+        await interaction.reply({ content: "Nothing is playing.", flags: 64 });
         return;
       }
       const track = q.tracks[0];
@@ -194,7 +194,7 @@ export async function handleMusicCommand(interaction: ChatInputCommandInteractio
     } else if (cmd === "volume") {
       const level = interaction.options.getInteger("level", true);
       setVolume(guildId, level);
-      await interaction.reply({ content: `🔊 Volume set to **${level}%**.`, ephemeral: true });
+      await interaction.reply({ content: `🔊 Volume set to **${level}%**.`, flags: 64 });
 
     } else if (cmd === "search") {
       const query = interaction.options.getString("query", true);
@@ -242,7 +242,7 @@ export async function handleMusicCommand(interaction: ChatInputCommandInteractio
     if (interaction.replied || interaction.deferred) {
       await interaction.editReply({ content: msg }).catch(() => {});
     } else {
-      await interaction.reply({ content: msg, ephemeral: true }).catch(() => {});
+      await interaction.reply({ content: msg, flags: 64 }).catch(() => {});
     }
   }
 }
