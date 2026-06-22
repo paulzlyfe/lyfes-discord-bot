@@ -9,91 +9,13 @@ import {
   StreamType,
   VoiceConnectionStatus,
 } from "@discordjs/voice";
-import type { DiscordGatewayAdapterCreator } from "@discordjs/voice";
-import { Events, Guild, GuildMember, TextChannel, VoiceChannel } from "discord.js";
+import { GuildMember, TextChannel, VoiceChannel } from "discord.js";
 import { spawn, execFile } from "child_process";
 import { promisify } from "util";
 import { Readable } from "stream";
 
 const execFileAsync = promisify(execFile);
 
-/**
- * Hybrid voice adapter:
- *  - Uses guild.voiceAdapterCreator for reliable OP4 sending (guild.shard.send).
- *  - Deduplicates VOICE_SERVER_UPDATE by endpoint+token so configureNetworking() is
- *    not called twice from the raw+builtin dual-delivery paths, but NEW values on
- *    reconnect are always forwarded (unlike a simple once-guard which blocks them).
- *  - Also subscribes to client "raw" events as a backup delivery path in case
- *    client.voice.adapters lookup doesn't fire.
- *  - ORDERING FIX: if VOICE_SERVER_UPDATE arrives before VOICE_STATE_UPDATE,
- *    configureNetworking() exits early (state is null). We re-trigger it once per
- *    server-update after state is stored.
- */
-function buildVoiceAdapter(guild: Guild): DiscordGatewayAdapterCreator {
-  return (methods) => {
-    // Dedup VOICE_SERVER_UPDATE by endpoint+token so repeated Discord retries
-    // don't open extra WebSockets. Reset on each OP4 (new join/reconnect attempt).
-    const seenServerKeys = new Set<string>();
-    let lastServerPacket: Parameters<typeof methods.onVoiceServerUpdate>[0] | null = null;
-    // Allow exactly one ordering-fix re-trigger per server update cycle.
-    let retriggered = false;
-
-    function resetForReconnect() {
-      seenServerKeys.clear();
-      retriggered = false;
-      console.log("[voice] resetForReconnect — cleared dedup state");
-    }
-
-    function handleServerUpdate(data: Parameters<typeof methods.onVoiceServerUpdate>[0]) {
-      const key = `${data.endpoint}|${data.token}`;
-      if (seenServerKeys.has(key)) {
-        console.log("[voice] Skipping duplicate VOICE_SERVER_UPDATE");
-        return;
-      }
-      seenServerKeys.add(key);
-      lastServerPacket = data;
-      retriggered = false;
-      const endpointHost = (data.endpoint ?? "").split(":")[0];
-      console.log(`[voice] ✓ VOICE_SERVER_UPDATE → addServerPacket (endpoint: ${endpointHost})`);
-      methods.onVoiceServerUpdate(data);
-    }
-
-    function handleStateUpdate(data: Parameters<typeof methods.onVoiceStateUpdate>[0]) {
-      console.log("[voice] ✓ VOICE_STATE_UPDATE → addStatePacket (session:", data.session_id, ")");
-      methods.onVoiceStateUpdate(data);
-      // ORDERING FIX: VOICE_SERVER_UPDATE often arrives before VOICE_STATE_UPDATE.
-      // @discordjs/voice's configureNetworking() bails if state is null when server
-      // arrives, so re-trigger it now that state is stored.
-      if (lastServerPacket && !retriggered) {
-        retriggered = true;
-        console.log("[voice] Re-triggering configureNetworking (server arrived before state)");
-        methods.onVoiceServerUpdate(lastServerPacket);
-      }
-    }
-
-    // Use ONLY the builtin adapter — it delivers events exactly once via
-    // client.voice.adapters and sends OP4 through guild.shard reliably.
-    // A raw-event backup was tried previously but caused double delivery of
-    // VOICE_STATE_UPDATE, opening two WebSockets simultaneously and triggering
-    // Discord close code 4017 (session conflict) on every connect attempt.
-    const builtinAdapter = guild.voiceAdapterCreator({
-      onVoiceServerUpdate: handleServerUpdate,
-      onVoiceStateUpdate: handleStateUpdate,
-      destroy: () => methods.destroy(),
-    });
-
-    return {
-      sendPayload: (data) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((data as any)?.op === 4) resetForReconnect();
-        const ok = builtinAdapter.sendPayload(data);
-        console.log(`[voice] sendPayload → ${ok ? "sent ✓" : "FAILED (shard not ready?)"}`);
-        return ok;
-      },
-      destroy: () => builtinAdapter.destroy(),
-    };
-  };
-}
 
 export interface Track {
   title: string;
@@ -173,7 +95,7 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
   const connection = joinVoiceChannel({
     channelId: voiceChannel.id,
     guildId: voiceChannel.guild.id,
-    adapterCreator: buildVoiceAdapter(voiceChannel.guild),
+    adapterCreator: voiceChannel.guild.voiceAdapterCreator,
     selfDeaf: false,
     selfMute: false,
   });
@@ -240,13 +162,13 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
       // Reached "connecting" (gateway events delivered OK) but UDP failed.
       throw new Error(
         `Voice connection failed at the UDP/networking stage (states: ${stateHistory.join(" → ")}). ` +
-        "Check the Fly.io logs for '[voice]' lines to see what happened. " +
-        "This may be a transient network issue — try again, or check if Discord's voice servers are reachable."
+        "Check the host logs for '[voice-net-*]' lines to see what happened. " +
+        "This may be a transient network issue — try again, or check if Discord's voice servers are reachable (outbound UDP)."
       );
     }
     throw new Error(
       `Voice connection stuck at signalling — Discord's VOICE_SERVER_UPDATE/VOICE_STATE_UPDATE never arrived. ` +
-      "Check Fly.io logs for '[voice] raw VOICE_SERVER_UPDATE' and '[voice] sendPayload → sent ✓'."
+      "Check the host logs for '[voice]' state transitions and '[voice-net-debug]' lines."
     );
   }
 
