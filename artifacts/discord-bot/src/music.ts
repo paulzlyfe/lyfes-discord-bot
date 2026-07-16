@@ -10,12 +10,16 @@ import {
   VoiceConnectionStatus,
 } from "@discordjs/voice";
 import { GuildMember, TextChannel, VoiceChannel } from "discord.js";
-import { spawn, execFile } from "child_process";
-import { promisify } from "util";
 import { Readable } from "stream";
+import * as playdl from "play-dl";
 
-const execFileAsync = promisify(execFile);
-
+// If YOUTUBE_COOKIE is set, authenticate play-dl so age-restricted and
+// region-locked videos work. This is optional — unauthenticated playback
+// works for most public videos.
+if (process.env.YOUTUBE_COOKIE) {
+  playdl.setToken({ youtube: { cookie: process.env.YOUTUBE_COOKIE } })
+    .catch((e) => console.warn("[music] Failed to set YouTube cookie:", e.message));
+}
 
 export interface Track {
   title: string;
@@ -38,46 +42,33 @@ export function getQueue(guildId: string) {
   return queues.get(guildId);
 }
 
-// Common yt-dlp flags applied to every invocation:
-//   --extractor-args "youtube:player_client=ios" — uses YouTube's iOS player API,
-//     which does not require sign-in confirmation and bypasses bot-detection checks
-//     that started being enforced in 2025.
-//   --js-runtimes node — tells yt-dlp to use the Node.js binary that ships with this
-//     Docker image instead of hunting for deno. Required since yt-dlp deprecated
-//     JS-runtime-free YouTube extraction.
-const YTDLP_BASE_ARGS = [
-  "--extractor-args", "youtube:player_client=ios",
-  "--js-runtimes", "node",
-];
-
+// Resolve a search query or URL to a { title, url } pair using play-dl.
+// For URLs the InnerTube video_info call is used; for text queries
+// play-dl's search endpoint is used (no browser / yt-dlp required).
 async function getVideoInfo(query: string): Promise<{ title: string; url: string }> {
   const isUrl = query.startsWith("http://") || query.startsWith("https://");
-  const args = [
-    ...YTDLP_BASE_ARGS,
-    "--no-playlist",
-    "--print", "%(title)s\n%(webpage_url)s",
-    "--quiet",
-    isUrl ? query : `ytsearch1:${query}`,
-  ];
-  const { stdout } = await execFileAsync("yt-dlp", args, { timeout: 20_000 });
-  const lines = stdout.trim().split("\n");
+  if (isUrl) {
+    const info = await playdl.video_info(query);
+    return {
+      title: info.video_details.title ?? "Unknown",
+      url: query,
+    };
+  }
+  const results = await playdl.search(query, { source: { youtube: "video" }, limit: 1 });
+  if (!results.length) throw new Error("No results found for that query.");
+  const first = results[0];
   return {
-    title: lines[0] ?? "Unknown",
-    url: lines[1] ?? query,
+    title: first.title ?? "Unknown",
+    url: first.url ?? query,
   };
 }
 
-function ytdlpStream(url: string): Readable {
-  const proc = spawn("yt-dlp", [
-    ...YTDLP_BASE_ARGS,
-    "-f", "bestaudio[ext=webm]/bestaudio/best",
-    "--no-playlist",
-    "-o", "-",
-    "--quiet",
-    url,
-  ]);
-  proc.stderr.on("data", (d: Buffer) => process.stderr.write(d));
-  return proc.stdout as unknown as Readable;
+// Open an audio stream for a YouTube URL via play-dl's InnerTube API.
+// Returns the Readable stream and the StreamType so @discordjs/voice can
+// choose the most efficient decoder (usually WebmOpus → no re-encode needed).
+async function getAudioStream(url: string): Promise<{ stream: Readable; type: StreamType }> {
+  const result = await playdl.stream(url, { discordPlayerCompatibility: true });
+  return { stream: result.stream as Readable, type: result.type as unknown as StreamType };
 }
 
 export async function joinChannel(member: GuildMember, textChannel: TextChannel) {
@@ -232,10 +223,8 @@ async function playNext(guildId: string) {
 
   const track = queue.tracks[0];
   try {
-    const stream = ytdlpStream(track.url);
-    const resource = createAudioResource(stream, {
-      inputType: StreamType.Arbitrary,
-    });
+    const { stream, type } = await getAudioStream(track.url);
+    const resource = createAudioResource(stream, { inputType: type });
 
     queue.player.play(resource);
     queue.playing = true;
