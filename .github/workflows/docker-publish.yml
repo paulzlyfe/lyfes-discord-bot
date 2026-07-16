@@ -28,32 +28,5 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/lyfe-bot:latest
 
-      - name: Deploy to Google Cloud VM
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.GCE_HOST }}
-          username: ${{ secrets.GCE_USERNAME }}
-          key: ${{ secrets.GCE_SSH_KEY }}
-          script: |
-            set -e
-            docker pull paulzlyfe/lyfe-bot:latest
-            docker stop lyfe-bot || true
-            docker rm lyfe-bot || true
-            docker run -d \
-              --name lyfe-bot \
-              --restart always \
-              -e DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }} \
-              -e FLY_APP_NAME=lyfe-moderation-bot \
-              -e DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }} \
-              -e DATABASE_URL='${{ secrets.DATABASE_URL }}' \
-              paulzlyfe/lyfe-bot:latest
-            echo "⏳ Waiting for container to start..."
-            sleep 5
-            if docker ps --filter "name=lyfe-bot" --filter "status=running" | grep -q lyfe-bot; then
-              echo "✅ lyfe-bot container is running"
-              docker logs lyfe-bot --tail 20
-            else
-              echo "❌ lyfe-bot container failed to start — full logs:"
-              docker logs lyfe-bot
-              exit 1
-            fi
+      # Watchtower running on your VM will detect the new image and restart the bot automatically.
+      # No SSH required. See README for one-time VM setup instructions.
