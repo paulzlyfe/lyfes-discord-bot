@@ -38,9 +38,22 @@ export function getQueue(guildId: string) {
   return queues.get(guildId);
 }
 
+// Common yt-dlp flags applied to every invocation:
+//   --extractor-args "youtube:player_client=ios" — uses YouTube's iOS player API,
+//     which does not require sign-in confirmation and bypasses bot-detection checks
+//     that started being enforced in 2025.
+//   --js-runtimes node — tells yt-dlp to use the Node.js binary that ships with this
+//     Docker image instead of hunting for deno. Required since yt-dlp deprecated
+//     JS-runtime-free YouTube extraction.
+const YTDLP_BASE_ARGS = [
+  "--extractor-args", "youtube:player_client=ios",
+  "--js-runtimes", "node",
+];
+
 async function getVideoInfo(query: string): Promise<{ title: string; url: string }> {
   const isUrl = query.startsWith("http://") || query.startsWith("https://");
   const args = [
+    ...YTDLP_BASE_ARGS,
     "--no-playlist",
     "--print", "%(title)s\n%(webpage_url)s",
     "--quiet",
@@ -56,6 +69,7 @@ async function getVideoInfo(query: string): Promise<{ title: string; url: string
 
 function ytdlpStream(url: string): Readable {
   const proc = spawn("yt-dlp", [
+    ...YTDLP_BASE_ARGS,
     "-f", "bestaudio[ext=webm]/bestaudio/best",
     "--no-playlist",
     "-o", "-",
