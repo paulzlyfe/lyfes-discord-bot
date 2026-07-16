@@ -6,6 +6,7 @@ on:
     paths:
       - "artifacts/discord-bot/**"
       - ".github/workflows/docker-publish.yml"
+  workflow_dispatch: # allow manual re-runs from the GitHub Actions UI
 
 jobs:
   build-and-push:
@@ -28,13 +29,13 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/lyfe-bot:latest
 
       - name: Deploy to Google Cloud VM
-        continue-on-error: true
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.GCE_HOST }}
           username: ${{ secrets.GCE_USERNAME }}
           key: ${{ secrets.GCE_SSH_KEY }}
           script: |
+            set -e
             docker pull paulzlyfe/lyfe-bot:latest
             docker stop lyfe-bot || true
             docker rm lyfe-bot || true
@@ -46,3 +47,13 @@ jobs:
               -e DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }} \
               -e DATABASE_URL='${{ secrets.DATABASE_URL }}' \
               paulzlyfe/lyfe-bot:latest
+            echo "⏳ Waiting for container to start..."
+            sleep 5
+            if docker ps --filter "name=lyfe-bot" --filter "status=running" | grep -q lyfe-bot; then
+              echo "✅ lyfe-bot container is running"
+              docker logs lyfe-bot --tail 20
+            else
+              echo "❌ lyfe-bot container failed to start — full logs:"
+              docker logs lyfe-bot
+              exit 1
+            fi
