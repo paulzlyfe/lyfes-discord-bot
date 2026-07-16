@@ -66,6 +66,31 @@ export function getQueue(guildId: string) {
   return queues.get(guildId);
 }
 
+// Translate raw yt-dlp failures into short, actionable messages instead of
+// dumping a Python traceback into Discord.
+function friendlyYtError(err: Error): Error {
+  const msg = err?.message ?? "";
+  if (/Sign in to confirm|cookies are no longer valid/i.test(msg)) {
+    return new Error(
+      "YouTube rejected the request — the cookies have likely expired. " +
+      "Re-export cookies.txt (incognito → log into YouTube → export while the tab is open), " +
+      "upload it to `~/bot/cookies.txt` on the server, then `docker compose restart lyfe-bot`."
+    );
+  }
+  if (/Video unavailable/i.test(msg)) {
+    return new Error("That video is unavailable (deleted, private, or region-blocked). Try another link.");
+  }
+  if (/Private video/i.test(msg)) {
+    return new Error("That video is private.");
+  }
+  if (/age.?restricted|confirm your age/i.test(msg)) {
+    return new Error("That video is age-restricted and can't be played.");
+  }
+  // Unknown failure: keep only the ERROR line so Discord doesn't get a wall of text.
+  const errLine = msg.split("\n").find((l) => l.trim().startsWith("ERROR:"));
+  return errLine ? new Error(errLine.trim()) : err;
+}
+
 async function getVideoInfo(query: string): Promise<{ title: string; url: string }> {
   const isUrl = query.startsWith("http://") || query.startsWith("https://");
   const args = [
@@ -75,12 +100,16 @@ async function getVideoInfo(query: string): Promise<{ title: string; url: string
     "--quiet",
     isUrl ? query : `ytsearch1:${query}`,
   ];
-  const { stdout } = await execFileAsync("yt-dlp", args, { timeout: 30_000 });
-  const lines = stdout.trim().split("\n");
-  return {
-    title: lines[0] ?? "Unknown",
-    url: lines[1] ?? query,
-  };
+  try {
+    const { stdout } = await execFileAsync("yt-dlp", args, { timeout: 30_000 });
+    const lines = stdout.trim().split("\n");
+    return {
+      title: lines[0] ?? "Unknown",
+      url: lines[1] ?? query,
+    };
+  } catch (err: any) {
+    throw friendlyYtError(err);
+  }
 }
 
 function getAudioStream(url: string): Readable {
@@ -113,21 +142,25 @@ export async function searchVideos(query: string, limit = 5): Promise<SearchResu
     "--quiet",
     `ytsearch${limit}:${query}`,
   ];
-  const { stdout } = await execFileAsync("yt-dlp", args, { timeout: 30_000 });
-  return stdout
-    .trim()
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => {
-      const [title, url, channel, duration] = line.split("\t");
-      return {
-        title: title || "Unknown",
-        url: url || "",
-        channel: channel && channel !== "NA" ? channel : "Unknown",
-        duration: duration && duration !== "NA" ? duration : "?",
-      };
-    })
-    .filter((r) => r.url);
+  try {
+    const { stdout } = await execFileAsync("yt-dlp", args, { timeout: 30_000 });
+    return stdout
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => {
+        const [title, url, channel, duration] = line.split("\t");
+        return {
+          title: title || "Unknown",
+          url: url || "",
+          channel: channel && channel !== "NA" ? channel : "Unknown",
+          duration: duration && duration !== "NA" ? duration : "?",
+        };
+      })
+      .filter((r) => r.url);
+  } catch (err: any) {
+    throw friendlyYtError(err);
+  }
 }
 
 export async function joinChannel(member: GuildMember, textChannel: TextChannel) {

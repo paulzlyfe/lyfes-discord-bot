@@ -22,4 +22,6 @@ RUN npm install
 
 COPY artifacts/discord-bot/src/ ./src/
 
-CMD ["node", "--import", "tsx/esm", "src/index.ts"]
+# Self-update yt-dlp on every container start (non-fatal if offline) so YouTube
+# site changes don't break extraction while the image itself sits unchanged.
+CMD ["sh", "-c", "yt-dlp -U || echo 'yt-dlp self-update failed — using baked-in version'; exec node --import tsx/esm src/index.ts"]
