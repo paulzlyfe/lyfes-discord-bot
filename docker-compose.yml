@@ -10,7 +10,7 @@ services:
       # Mount your Netscape-format YouTube cookies so yt-dlp can authenticate.
       # See README: export with the "Get cookies.txt LOCALLY" Chrome extension,
       # save as ~/bot/cookies.txt, then run: docker compose up -d
-      - ./cookies.txt:/cookies.txt:ro
+      - ./cookies.txt:/cookies.txt
 
   watchtower:
     image: containrrr/watchtower
