@@ -1,0 +1,16 @@
+services:
+  lyfe-bot:
+    image: paulzlyfe/lyfe-bot:latest
+    container_name: lyfe-bot
+    restart: always
+    env_file: .env          # keeps secrets out of the compose file
+    environment:
+      - FLY_APP_NAME=lyfe-moderation-bot   # satisfies the startup guard
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 60 lyfe-bot     # check Docker Hub every 60 s, only watch lyfe-bot

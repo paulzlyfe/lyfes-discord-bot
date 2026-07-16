@@ -17,8 +17,13 @@ import * as playdl from "play-dl";
 // region-locked videos work. This is optional — unauthenticated playback
 // works for most public videos.
 if (process.env.YOUTUBE_COOKIE) {
-  playdl.setToken({ youtube: { cookie: process.env.YOUTUBE_COOKIE } })
-    .catch((e) => console.warn("[music] Failed to set YouTube cookie:", e.message));
+  try {
+    void playdl.setToken({ youtube: { cookie: process.env.YOUTUBE_COOKIE } })
+      .then(() => console.log("[music] YouTube cookie applied ✅"))
+      .catch((e: Error) => console.warn("[music] Failed to apply YouTube cookie:", e.message));
+  } catch (e: any) {
+    console.warn("[music] setToken threw synchronously:", e.message);
+  }
 }
 
 export interface Track {
