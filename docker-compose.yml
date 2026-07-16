@@ -6,6 +6,11 @@ services:
     env_file: .env          # keeps secrets out of the compose file
     environment:
       - FLY_APP_NAME=lyfe-moderation-bot   # satisfies the startup guard
+    volumes:
+      # Mount your Netscape-format YouTube cookies so yt-dlp can authenticate.
+      # See README: export with the "Get cookies.txt LOCALLY" Chrome extension,
+      # save as ~/bot/cookies.txt, then run: docker compose up -d
+      - ./cookies.txt:/cookies.txt:ro
 
   watchtower:
     image: containrrr/watchtower
