@@ -8,13 +8,13 @@ import {
   StringSelectMenuInteraction,
   TextChannel,
 } from "discord.js";
-import YouTube from "youtube-sr";
 import {
   addTrack,
   getQueue,
   joinChannel,
   pauseTrack,
   resumeTrack,
+  searchVideos,
   setLoop,
   setVolume,
   skipTrack,
@@ -200,7 +200,7 @@ export async function handleMusicCommand(interaction: ChatInputCommandInteractio
       const query = interaction.options.getString("query", true);
       await interaction.deferReply();
 
-      const results = await YouTube.search(query, { type: "video", limit: 5 });
+      const results = await searchVideos(query, 5);
       if (!results.length) {
         await interaction.editReply({ content: "❌ No results found." });
         return;
@@ -211,8 +211,8 @@ export async function handleMusicCommand(interaction: ChatInputCommandInteractio
         .setPlaceholder("Pick a song to play…")
         .addOptions(
           results.map((r, i) => ({
-            label: (r.title ?? "Unknown").slice(0, 100),
-            description: `${r.channel?.name ?? "Unknown"} • ${r.durationFormatted ?? "?"}`,
+            label: r.title.slice(0, 100),
+            description: `${r.channel} • ${r.duration}`.slice(0, 100),
             value: r.url,
             emoji: ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"][i],
           }))
@@ -225,7 +225,7 @@ export async function handleMusicCommand(interaction: ChatInputCommandInteractio
         .setTitle(`🔍 Search results for "${query}"`)
         .setDescription(
           results
-            .map((r, i) => `${["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣"][i]} **${r.title}** — ${r.channel?.name ?? "?"} \`${r.durationFormatted ?? "?"}\``)
+            .map((r, i) => `${["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣"][i]} **${r.title}** — ${r.channel} \`${r.duration}\``)
             .join("\n")
         )
         .setFooter({ text: "Select a song below • expires in 30s" });

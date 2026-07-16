@@ -88,6 +88,40 @@ function getAudioStream(url: string): Readable {
   return proc.stdout as unknown as Readable;
 }
 
+export interface SearchResult {
+  title: string;
+  url: string;
+  channel: string;
+  duration: string;
+}
+
+// Search YouTube via yt-dlp (same cookie-authenticated path as playback).
+// --flat-playlist avoids a full extraction per result, so it's fast.
+export async function searchVideos(query: string, limit = 5): Promise<SearchResult[]> {
+  const args = [
+    ...ytdlpBaseArgs(),
+    "--flat-playlist",
+    "--print", "%(title)s\t%(url)s\t%(channel)s\t%(duration_string)s",
+    "--quiet",
+    `ytsearch${limit}:${query}`,
+  ];
+  const { stdout } = await execFileAsync("yt-dlp", args, { timeout: 30_000 });
+  return stdout
+    .trim()
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      const [title, url, channel, duration] = line.split("\t");
+      return {
+        title: title || "Unknown",
+        url: url || "",
+        channel: channel && channel !== "NA" ? channel : "Unknown",
+        duration: duration && duration !== "NA" ? duration : "?",
+      };
+    })
+    .filter((r) => r.url);
+}
+
 export async function joinChannel(member: GuildMember, textChannel: TextChannel) {
   const voiceChannel = member.voice.channel as VoiceChannel;
   if (!voiceChannel) throw new Error("You must be in a voice channel.");

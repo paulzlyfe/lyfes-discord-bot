@@ -16,10 +16,8 @@
     "libsodium-wrappers": "^0.8.4",
     "opusscript": "^0.1.1",
     "pg": "^8.13.3",
-    "play-dl": "^1.9.7",
     "sodium-native": "^4.3.3",
-    "tsx": "catalog:",
-    "youtube-sr": "^4.3.12"
+    "tsx": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
