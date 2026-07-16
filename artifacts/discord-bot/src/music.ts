@@ -7,6 +7,7 @@ import {
   getVoiceConnection,
   joinVoiceChannel,
   StreamType,
+  VoiceConnection,
   VoiceConnectionStatus,
 } from "@discordjs/voice";
 import { GuildMember, TextChannel, VoiceChannel } from "discord.js";
@@ -53,6 +54,13 @@ interface GuildQueue {
 }
 
 const queues = new Map<string, GuildQueue>();
+
+// Listener bookkeeping — joinVoiceChannel() returns the SAME connection object on
+// repeated calls, so these must live at module scope to prevent duplicate handlers
+// (the "MaxListenersExceededWarning: 11 error listeners" symptom).
+const instrumentedConnections = new WeakSet<VoiceConnection>();
+const tappedNetworking = new WeakSet<object>();
+const connDiagnostics = new WeakMap<VoiceConnection, { history: string[]; everConnecting: boolean }>();
 
 export function getQueue(guildId: string) {
   return queues.get(guildId);
@@ -156,68 +164,92 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
     selfMute: false,
   });
 
-  // Track state transitions for diagnostics.
-  let everReachedConnecting = false;
-  const stateHistory: string[] = [];
-  // Track which networking instances we've already tapped to avoid duplicate listeners.
-  const tappedNetworking = new WeakSet();
+  // Instrument each connection object exactly once — joinVoiceChannel() returns
+  // the existing connection on repeated /play calls.
+  if (!instrumentedConnections.has(connection)) {
+    instrumentedConnections.add(connection);
+    connDiagnostics.set(connection, { history: [], everConnecting: false });
 
-  connection.on("stateChange", (oldState, newState) => {
-    console.log(`[voice] ${oldState.status} → ${newState.status}`);
-    stateHistory.push(newState.status);
-    if (newState.status === VoiceConnectionStatus.Connecting) everReachedConnecting = true;
+    connection.on("stateChange", (oldState, newState) => {
+      console.log(`[voice] ${oldState.status} → ${newState.status}`);
+      const diag = connDiagnostics.get(connection);
+      diag?.history.push(newState.status);
+      if (diag && newState.status === VoiceConnectionStatus.Connecting) diag.everConnecting = true;
 
-    // Tap into the internal Networking object to capture WebSocket close codes and
-    // sub-state transitions. VoiceConnection doesn't forward these events itself.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const net = (newState as any).networking;
-    if (net && !tappedNetworking.has(net)) {
-      tappedNetworking.add(net);
-
+      // Tap into the internal Networking object to capture WebSocket close codes and
+      // sub-state transitions. VoiceConnection doesn't forward these events itself.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      net.on("stateChange", (o: any, n: any) => {
-        const oCode = o?.code ?? o?.status ?? String(o);
-        const nCode = n?.code ?? n?.status ?? String(n);
-        console.log(`[voice-net] networking sub-state: ${oCode} → ${nCode}`);
+      const net = (newState as any).networking;
+      if (net && !tappedNetworking.has(net)) {
+        tappedNetworking.add(net);
 
-        // Attach WebSocket close/error listener on new states that carry a ws.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const ws = n?.ws as any;
-        if (ws) {
-          ws.once("close", (code: number, reason: Buffer) => {
-            console.log(`[voice-ws-close] code=${code} reason="${reason?.toString?.() ?? ""}"`);
-          });
-          ws.on("error", (e: Error) => {
-            console.log(`[voice-ws-error] ${e.message}`);
-          });
-        }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const udp = n?.udp as any;
-        if (udp) {
-          udp.on("error", (e: Error) => console.log(`[voice-udp-error] ${e.message}`));
-        }
-      });
+        net.on("stateChange", (o: any, n: any) => {
+          const oCode = o?.code ?? o?.status ?? String(o);
+          const nCode = n?.code ?? n?.status ?? String(n);
+          console.log(`[voice-net] networking sub-state: ${oCode} → ${nCode}`);
 
-      // Networking emits "close" with the numeric WebSocket close code after
-      // destructuring it from the CloseEvent. This is the cleanest way to get
-      // the actual code Discord sent (4006 = session invalid, 4014 = disconnected, etc.)
-      net.on("close", (code: number) => console.log(`[voice-net-close] WebSocket closed by Discord — code=${code}`));
-      net.on("debug", (msg: string) => console.log(`[voice-net-debug] ${msg}`));
-      net.on("error", (e: Error) => console.log(`[voice-net-error] ${e.message}`));
-    }
-  });
+          // Attach WebSocket close/error listener on new states that carry a ws.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const ws = n?.ws as any;
+          if (ws && !tappedNetworking.has(ws)) {
+            tappedNetworking.add(ws);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ws.once("close", (event: any) => {
+              const code = typeof event === "object" ? event?.code : event;
+              console.log(`[voice-ws-close] code=${code}`);
+            });
+            ws.on("error", (e: Error) => {
+              console.log(`[voice-ws-error] ${e.message}`);
+            });
+          }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const udp = n?.udp as any;
+          if (udp && !tappedNetworking.has(udp)) {
+            tappedNetworking.add(udp);
+            udp.on("error", (e: Error) => console.log(`[voice-udp-error] ${e.message}`));
+          }
+        });
+
+        // Networking emits "close" with the numeric WebSocket close code after
+        // destructuring it from the CloseEvent. This is the cleanest way to get
+        // the actual code Discord sent (4006 = session invalid, 4014 = disconnected, etc.)
+        net.on("close", (code: number) => console.log(`[voice-net-close] WebSocket closed by Discord — code=${code}`));
+        net.on("debug", (msg: string) => console.log(`[voice-net-debug] ${msg}`));
+        net.on("error", (e: Error) => console.log(`[voice-net-error] ${e.message}`));
+      }
+    });
+
+    // Recover from transient drops (channel move, voice server change). If the
+    // connection doesn't start reconnecting within 5s it's a hard disconnect
+    // (e.g. 4014 kick) — destroy it so the next /play builds a clean one.
+    connection.on(VoiceConnectionStatus.Disconnected, async () => {
+      try {
+        await Promise.race([
+          entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
+          entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+        ]);
+        // Reconnecting on its own — leave it alone.
+      } catch {
+        if (connection.state.status !== VoiceConnectionStatus.Destroyed) {
+          console.log("[voice] Hard disconnect — destroying connection (next /play rejoins cleanly)");
+          connection.destroy();
+        }
+      }
+    });
+  }
 
   try {
     await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
     console.log("[voice] Connection ready ✅");
   } catch (err) {
-    const stuck = connection.state.status;
-    connection.destroy();
+    const diag = connDiagnostics.get(connection);
+    if (connection.state.status !== VoiceConnectionStatus.Destroyed) connection.destroy();
 
-    if (everReachedConnecting) {
+    if (diag?.everConnecting) {
       // Reached "connecting" (gateway events delivered OK) but UDP failed.
       throw new Error(
-        `Voice connection failed at the UDP/networking stage (states: ${stateHistory.join(" → ")}). ` +
+        `Voice connection failed at the UDP/networking stage (states: ${diag.history.join(" → ")}). ` +
         "Check the host logs for '[voice-net-*]' lines to see what happened. " +
         "This may be a transient network issue — try again, or check if Discord's voice servers are reachable (outbound UDP)."
       );
@@ -233,7 +265,6 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
     const player = createAudioPlayer();
     queue = { tracks: [], player, playing: false, loop: false, volume: 100, textChannel };
     queues.set(voiceChannel.guild.id, queue);
-    connection.subscribe(player);
 
     player.on(AudioPlayerStatus.Idle, () => {
       const q = queues.get(voiceChannel.guild.id);
@@ -264,6 +295,11 @@ export async function joinChannel(member: GuildMember, textChannel: TextChannel)
   } else {
     queue.textChannel = textChannel;
   }
+
+  // Always (re)subscribe — after a disconnect the connection object is brand new,
+  // and a player with no subscriber auto-pauses: yt-dlp/ffmpeg run but audio goes
+  // nowhere. Subscribing an already-subscribed pair is a safe no-op.
+  connection.subscribe(queue.player);
 
   return queue;
 }
