@@ -14,6 +14,8 @@ on:
 
 jobs:
   notify:
+    # Guard: avoid duplicate/empty push triggers (skip when push before==after)
+    if: ${{ github.event_name != 'push' || github.event.before != github.event.after }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -48,6 +50,30 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y jq git
+
+      - name: Restore last-posted SHA (cache)
+        id: cache-restore
+        uses: actions/cache@v4
+        with:
+          path: last_posted_sha.txt
+          key: discord-last-sha-${{ github.repository }}
+          restore-keys: |
+            discord-last-sha-${{ github.repository }}-
+
+      - name: Read last posted SHA
+        id: read-last
+        run: |
+          LAST=""
+          if [ -f last_posted_sha.txt ]; then
+            LAST=$(cat last_posted_sha.txt)
+          fi
+          echo "last=$LAST" >> $GITHUB_OUTPUT
+
+      - name: Skip if already posted
+        if: ${{ steps.read-last.outputs.last == github.sha }}
+        run: |
+          echo "Already posted SHA $GITHUB_SHA; skipping."
+          exit 0
 
       - name: Build and send Discord payload (production)
         env:
@@ -100,7 +126,6 @@ jobs:
           # Helper: fetch check runs for a commit SHA
           fetch_check_runs() {
             local sha="$1"
-            # Use GITHUB_TOKEN provided by Actions
             curl -s -H "Accept: application/vnd.github+json" \
                  -H "Authorization: Bearer $GITHUB_TOKEN" \
                  "https://api.github.com/repos/${REPO}/commits/${sha}/check-runs" \
@@ -111,8 +136,9 @@ jobs:
           build_file_list_and_diffs() {
             local base="$1"
             local head="$2"
-            local files
-            files=$(git fetch origin "$base":"refs/tmp/base" >/dev/null 2>&1 || true; git diff --name-only refs/tmp/base "$head" || git diff --name-only "$base" "$head" || true)
+            # Try to fetch base ref for diff; fall back gracefully
+            git fetch origin "$base":"refs/tmp/base" >/dev/null 2>&1 || true
+            files=$(git diff --name-only refs/tmp/base "$head" 2>/dev/null || git diff --name-only "$base" "$head" 2>/dev/null || true)
             if [ -z "$files" ]; then
               echo ""
               return
@@ -131,9 +157,8 @@ jobs:
               if [ -f "$f" ]; then
                 size=$(wc -c < "$f" || echo 0)
                 if [ "$size" -le $MAX_DIFF_BYTES ]; then
-                  diff_snip=$(git diff --no-color --unified=0 refs/tmp/base "$head" -- "$f" 2>/dev/null | sed -n '1,200p' | sed 's/`/`/g')
+                  diff_snip=$(git diff --no-color --unified=0 refs/tmp/base "$head" -- "$f" 2>/dev/null | sed -n '1,200p' || true)
                   if [ -n "$diff_snip" ]; then
-                    # shorten diff snippet to 1000 chars
                     diff_snip=$(printf "%s" "$diff_snip" | head -c 1000)
                     out="${out}\`\`\`diff\n${diff_snip}\n\`\`\`\n"
                   fi
@@ -259,7 +284,6 @@ jobs:
           payload_len=$(echo -n "$payload" | wc -c)
           if [ "$payload_len" -gt 6000 ]; then
             echo "::warning::Payload size ($payload_len) is large; trimming description."
-            # aggressive trim
             description=$(shorten "$description" 800)
             embed=$(jq -n --arg t "$title" --arg d "$description" --arg u "$url" --arg an "$author_name" --arg ai "$author_icon" --arg th "$thumbnail" '{ title: $t, description: $d, url: $u, color: 3066993, author: { name: $an, icon_url: $ai }, thumbnail: { url: $th } }')
             payload=$(jq -n --argjson e "$embed" '{embeds: [$e]}')
@@ -268,48 +292,48 @@ jobs:
 
           echo "Payload size: ${payload_len} bytes"
 
-          # Post via webhook and capture response (message JSON)
-          resp=$(curl -s -H "Content-Type: application/json" -d "$payload" "$WEBHOOK" || true)
-          # Try to extract message id if webhook returned JSON
-          message_id=$(echo "$resp" | jq -r '.id // empty' || true)
-          http_status=$(echo "$resp" | jq -r '.code // empty' || true)
-
-          # If webhook returned an HTTP status code instead of JSON, try a status check
-          if [ -z "$message_id" ]; then
-            # Try a simple status check by re-sending but capturing HTTP code
-            http_status=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -d "$payload" "$WEBHOOK" || true)
-            echo "Discord webhook HTTP status: $http_status"
-            if [ "$http_status" -ge 200 ] && [ "$http_status" -lt 300 ]; then
-              echo "Message posted successfully (no message id returned)."
-            else
-              echo "::error::Discord webhook returned HTTP status $http_status"
-              exit 13
+          # Post via webhook and capture HTTP status and response
+          http_code=$(curl -s -o /tmp/discord_resp -w "%{http_code}" -H "Content-Type: application/json" -d "$payload" "$WEBHOOK" || true)
+          echo "Discord webhook HTTP status: $http_code"
+          if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+            echo "Message posted successfully."
+            # Try to extract message id if response JSON present
+            message_id=$(jq -r '.id // empty' /tmp/discord_resp || true)
+            if [ -n "$message_id" ]; then
+              echo "Message id: $message_id"
             fi
           else
-            echo "Message posted; message id: $message_id"
+            echo "::error::Discord webhook returned HTTP status $http_code"
+            echo "Response body:"
+            head -c 4000 /tmp/discord_resp || true
+            exit 13
           fi
 
-          # Threaded PR updates: create a thread from the message if bot token and channel id are provided and this is a PR event
-          if [ "$EVENT_NAME" = "pull_request" ] && [ -n "${BOT_TOKEN:-}" ] && [ -n "${CHANNEL_ID:-}" ] && [ -n "${message_id:-}" ]; then
-            thread_name="PR-${pr_number}-${pr_head_ref}"
-            echo "Creating thread '${thread_name}' from message ${message_id} in channel ${CHANNEL_ID}..."
-            create_thread_resp=$(curl -s -X POST "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages/${message_id}/threads" \
-              -H "Authorization: Bot ${BOT_TOKEN}" \
-              -H "Content-Type: application/json" \
-              -d "{\"name\":\"${thread_name}\",\"auto_archive_duration\":1440}" || true)
-            thread_id=$(echo "$create_thread_resp" | jq -r '.id // empty' || true)
-            if [ -n "$thread_id" ]; then
-              echo "Thread created: $thread_id"
-              # Optionally post a starter message in the thread
-              if [ -n "$BOT_TOKEN" ]; then
-                curl -s -X POST "https://discord.com/api/v10/channels/${thread_id}/messages" \
-                  -H "Authorization: Bot ${BOT_TOKEN}" \
-                  -H "Content-Type: application/json" \
-                  -d "{\"content\":\"Thread for PR #${pr_number} updates. Use this thread for discussion.\"}" >/dev/null || true
-              fi
-            else
-              echo "::warning::Failed to create thread; response: $create_thread_resp"
-            fi
-          fi
+      - name: Save last-posted SHA (cache)
+        if: ${{ always() }}
+        uses: actions/cache@v4
+        with:
+          path: last_posted_sha.txt
+          key: discord-last-sha-${{ github.repository }}-${{ github.sha }}
+        run: |
+          echo "${GITHUB_SHA}" > last_posted_sha.txt || true
 
-          echo "Done."
+      - name: Threaded PR creation (optional)
+        if: ${{ github.event_name == 'pull_request' && secrets.DISCORD_BOT_TOKEN && secrets.DISCORD_CHANNEL_ID }}
+        env:
+          BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: |
+          # This step attempts to create a thread from the webhook message if message_id is available.
+          # It is best-effort; failures will be logged but won't break the workflow.
+          set -euo pipefail
+          if [ ! -f /tmp/discord_resp ]; then
+            echo "No webhook response file found; skipping thread creation."
+            exit 0
+          fi
+          message_id=$(jq -r '.id // empty' /tmp/discord_resp || true)
+          if [ -z "$message_id" ]; then
+            echo "No message id returned by webhook; cannot create thread."
+            exit 0
+          fi
+          pr_number
