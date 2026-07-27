@@ -1,16 +1,19 @@
-name: Repo Relay
+name: Discord Notify
 
 on:
   push:
-  pull_request:
-  issues:
-  release:
 
 jobs:
-  relay:
+  notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Repo Relay
-        uses: repo-relay/action-discord@v1.0.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+      - name: Send push notification to Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "DISCORD_WEBHOOK secret not set"
+            exit 1
+          fi
+          payload="{\"content\":\"New push to ${GITHUB_REPOSITORY} by ${GITHUB_ACTOR}: ${GITHUB_SHA}\"}"
+          curl -H "Content-Type: application/json" -d "$payload" "$WEBHOOK"
