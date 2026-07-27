@@ -246,3 +246,32 @@ jobs:
               issue_number=$(jq -r '.issue.number' "$EVENT_FILE")
               issue_title=$(jq -r '.issue.title' "$EVENT_FILE" | tr '\n' ' ')
               issue_user=$(jq -r '.issue.user.login' "$EVENT_FILE")
+              issue_url=$(jq -r '.issue.html_url' "$EVENT_FILE")
+              title="Issue #${issue_number} ${issue_action}: ${issue_title}"
+              description="**Author:** ${issue_user}\n**Action:** ${issue_action}\n[View issue](${issue_url})"
+              author_name="$issue_user"
+              author_icon="https://github.com/${issue_user}.png"
+              url="$issue_url"
+              ;;
+
+            *)
+              echo "::warning::Unhandled event: $EVENT_NAME"
+              exit 0
+              ;;
+          esac
+
+          # Build embed and cap size
+          embed=$(jq -n --arg t "$title" --arg d "$description" --arg u "$url" --arg an "$author_name" --arg ai "$author_icon" --arg th "$thumbnail" '{
+            title: $t,
+            description: $d,
+            url: $u,
+            color: 3066993,
+            author: { name: $an, icon_url: $ai },
+            thumbnail: { url: $th }
+          }')
+
+          embed_len=$(echo -n "$embed" | wc -c)
+          if [ "$embed_len" -gt "$MAX_EMBED_CHARS" ]; then
+            echo "::warning::Embed size ($embed_len) exceeds limit ($MAX_EMBED_CHARS). Truncating description."
+            short_desc=$(shorten "$description" 1000)
+            embed=$(jq -n --arg t "$title" --arg d
