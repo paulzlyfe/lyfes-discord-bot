@@ -25,7 +25,7 @@ jobs:
         env:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          if [ -z "$WEBHOOK" ]; then
+          if [ -z "${WEBHOOK:-}" ]; then
             echo "::error::DISCORD_WEBHOOK secret not set or empty"
             exit 10
           fi
@@ -94,26 +94,33 @@ jobs:
           MAX_DIFF_BYTES: 5000
         shell: bash
         run: |
+          # Debug-friendly, robust payload builder
           set -euo pipefail
+          set -x
+          trap 'rc=$?; echo "::error::Command failed at line ${LINENO} with exit code ${rc}"; echo "Failed command: $BASH_COMMAND"; if [ -f /tmp/discord_resp ]; then echo "---- /tmp/discord_resp (first 4000 bytes) ----"; head -c 4000 /tmp/discord_resp || true; echo "---- end response ----"; fi; exit $rc' ERR
+
+          # Sanity checks
+          if [ -z "${WEBHOOK:-}" ]; then
+            echo "::error::DISCORD_WEBHOOK is empty"
+            exit 20
+          fi
+          if ! command -v jq >/dev/null 2>&1; then
+            echo "::error::jq not installed"
+            exit 21
+          fi
+          if [ -z "${GITHUB_EVENT_PATH:-}" ] || [ ! -f "$GITHUB_EVENT_PATH" ]; then
+            echo "::error::GITHUB_EVENT_PATH ($GITHUB_EVENT_PATH) missing"
+            exit 22
+          fi
 
           EVENT_FILE="$GITHUB_EVENT_PATH"
           EVENT_NAME="$GITHUB_EVENT_NAME"
           BRANCH=${GITHUB_REF#refs/heads/}
-          OWNER="${GITHUB_REPOSITORY_OWNER:-${REPO_OWNER}}"
-
-          if [ ! -f "$EVENT_FILE" ]; then
-            echo "::error::GITHUB_EVENT_PATH ($EVENT_FILE) not found"
-            exit 11
-          fi
+          OWNER="${GITHUB_REPOSITORY_OWNER:-${REPO_OWNER:-}}"
 
           shorten() {
-            local s="$1"
-            local max=$2
-            if [ ${#s} -le $max ]; then
-              printf "%s" "$s"
-            else
-              printf "%s..." "${s:0:$((max-3))}"
-            fi
+            local s="$1"; local max=$2
+            if [ ${#s} -le $max ]; then printf "%s" "$s"; else printf "%s..." "${s:0:$((max-3))}"; fi
           }
 
           # Default embed fields
@@ -124,56 +131,21 @@ jobs:
           author_icon="$ACTOR_AVATAR"
           url="$REPO_URL"
 
-          # Helper: fetch check runs for a commit SHA
+          # Helper: fetch check runs for a commit SHA (safe)
           fetch_check_runs() {
             local sha="$1"
+            if [ -z "${GITHUB_TOKEN:-}" ]; then
+              return 0
+            fi
             curl -s -H "Accept: application/vnd.github+json" \
                  -H "Authorization: Bearer $GITHUB_TOKEN" \
                  "https://api.github.com/repos/${REPO}/commits/${sha}/check-runs" \
                  | jq -r '.check_runs[] | "\(.name): \(.conclusion // .status) - \(.html_url // "")"' || true
           }
 
-          # Helper: build file list and small diffs between base and head
+          # Helper: build file list and small diffs between base and head (tolerant)
           build_file_list_and_diffs() {
             local base="$1"
             local head="$2"
             git fetch origin "$base":"refs/tmp/base" >/dev/null 2>&1 || true
-            files=$(git diff --name-only refs/tmp/base "$head" 2>/dev/null || git diff --name-only "$base" "$head" 2>/dev/null || true)
-            if [ -z "$files" ]; then
-              echo ""
-              return
-            fi
-            local count=0
-            local out=""
-            while IFS= read -r f; do
-              [ -z "$f" ] && continue
-              count=$((count+1))
-              if [ $count -gt $MAX_FILE_LIST ]; then
-                out="${out}• ...and more files (truncated)\n"
-                break
-              fi
-              out="${out}• ${f}\n"
-              if [ -f "$f" ]; then
-                size=$(wc -c < "$f" || echo 0)
-                if [ "$size" -le $MAX_DIFF_BYTES ]; then
-                  diff_snip=$(git diff --no-color --unified=0 refs/tmp/base "$head" -- "$f" 2>/dev/null | sed -n '1,200p' || true)
-                  if [ -n "$diff_snip" ]; then
-                    diff_snip=$(printf "%s" "$diff_snip" | head -c 1000)
-                    out="${out}\`\`\`diff\n${diff_snip}\n\`\`\`\n"
-                  fi
-                fi
-              fi
-            done <<< "$files"
-            echo -n "$out"
-          }
-
-          case "$EVENT_NAME" in
-            push)
-              title="Push to ${BRANCH} in ${REPO}"
-
-              commits_count=$(jq -r 'if .commits then (.commits|length) else 0 end' "$EVENT_FILE")
-              commits_md=""
-              if [ "$commits_count" -gt 0 ]; then
-                for i in $(seq 0 $((commits_count-1))); do
-                  sha=$(jq -r --argjson idx "$i" '.commits[$idx].id // empty' --argjson idx "$i" "$EVENT_FILE")
-
+            files=$(git diff
