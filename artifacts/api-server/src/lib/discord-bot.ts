@@ -41,13 +41,16 @@ const setChannelCommand = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .setDMPermission(false);
 
+const GUILD_ID = "1506422478300516422";
+
 async function registerCommands(): Promise<void> {
   const rest = new REST().setToken(DISCORD_BOT_TOKEN!);
   try {
-    await rest.put(Routes.applicationCommands(DISCORD_CLIENT_ID!), {
-      body: [setChannelCommand.toJSON()],
-    });
-    logger.info("Registered global slash commands");
+    await rest.put(
+      Routes.applicationGuildCommands(DISCORD_CLIENT_ID!, GUILD_ID),
+      { body: [setChannelCommand.toJSON()] },
+    );
+    logger.info({ guildId: GUILD_ID }, "Registered guild slash commands");
   } catch (err) {
     logger.error({ err }, "Failed to register slash commands");
   }
