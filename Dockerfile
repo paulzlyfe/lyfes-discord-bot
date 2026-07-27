@@ -60,8 +60,8 @@ RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Copy built output from builder
 COPY --from=builder /app/artifacts/api-server/dist ./artifacts/api-server/dist
-COPY --from=builder /app/lib/db/dist ./lib/db/dist 2>/dev/null || true
-COPY --from=builder /app/lib/api-zod/dist ./lib/api-zod/dist 2>/dev/null || true
+COPY --from=builder /app/lib/db/dist ./lib/db/dist
+COPY --from=builder /app/lib/api-zod/dist ./lib/api-zod/dist
 
 WORKDIR /app/artifacts/api-server
 
