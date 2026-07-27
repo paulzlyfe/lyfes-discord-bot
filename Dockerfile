@@ -14,8 +14,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY tsconfig.base.json ./
 COPY lib/db/package.json lib/db/
 COPY lib/api-zod/package.json lib/api-zod/
-COPY lib/api-client-react/package.json lib/api-client-react/ 2>/dev/null || true
-COPY lib/api-spec/package.json lib/api-spec/ 2>/dev/null || true
+COPY lib/api-client-react/package.json lib/api-client-react/
+COPY lib/api-spec/package.json lib/api-spec/
 COPY artifacts/api-server/package.json artifacts/api-server/
 
 # Install all workspace dependencies
