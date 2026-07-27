@@ -104,11 +104,11 @@ function teardown(guildId: string): void {
 }
 
 // ── Streaming via yt-dlp ─────────────────────────────────────────────────────
-// Prefer the up-to-date standalone binary in ./bin (downloaded from GitHub
-// releases); the Nix-installed yt-dlp is too old for current YouTube.
-const YTDLP_BIN = existsSync(join(process.cwd(), "bin", "yt-dlp"))
-  ? join(process.cwd(), "bin", "yt-dlp")
-  : "yt-dlp";
+// Check common install locations: ./bin (Replit), /usr/local/bin (Docker), fallback to PATH.
+const YTDLP_BIN = [
+  join(process.cwd(), "bin", "yt-dlp"),
+  "/usr/local/bin/yt-dlp",
+].find(existsSync) ?? "yt-dlp";
 
 function getStream(url: string): { stream: Readable; proc: ChildProcess } {
   const args = [
@@ -219,6 +219,8 @@ export function getMusicService() {
           channelId: voiceChannel.id,
           guildId,
           adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+          selfDeaf: false,
+          selfMute: false,
         });
 
         state.connection = connection;
@@ -240,8 +242,16 @@ export function getMusicService() {
 
         connection.on(VoiceConnectionStatus.Disconnected, async () => {
           try {
-            await entersState(connection, VoiceConnectionStatus.Ready, 5_000);
+            // If Discord is just moving us to a new channel it goes through
+            // Signalling/Connecting first — wait for either to confirm it's
+            // a reconnect, not a true kick/disconnect.
+            await Promise.race([
+              entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
+              entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+            ]);
+            // Successfully reconnecting — do nothing, let it continue.
           } catch {
+            // Neither state reached: genuine disconnect, clean up.
             teardown(guildId);
           }
         });

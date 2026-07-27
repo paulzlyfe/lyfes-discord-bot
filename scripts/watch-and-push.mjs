@@ -25,6 +25,8 @@ function push() {
       return;
     }
     console.log("[autopush] Changes detected — committing and pushing...");
+    execSync("git config user.email 'bot@replit.local'", { cwd: ROOT });
+    execSync("git config user.name 'Replit Autopush'", { cwd: ROOT });
     execSync("git add -A", { cwd: ROOT, stdio: "inherit" });
     const msg = `Auto-update bot code ${new Date().toISOString()}`;
     execSync(`git commit -m "${msg}"`, { cwd: ROOT, stdio: "inherit" });
