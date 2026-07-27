@@ -11,6 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Repo Relay
-        uses: repo-relay/action-discord-webhook@v1
+        uses: repo-relay/action-discord@v1
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
