@@ -1,11 +1,9 @@
 name: Discord Notify
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    types: [opened, reopened, closed, synchronize]
-  release:
-    types: [published]
+    branches:
+      - discord-notify/centralize-action
+
 jobs:
   notify:
     runs-on: ubuntu-latest
@@ -14,3 +12,4 @@ jobs:
         uses: ./.github/actions/discord-notify
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          use-bot: 'false'
