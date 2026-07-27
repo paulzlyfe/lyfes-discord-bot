@@ -26,6 +26,8 @@ app.use(
   }),
 );
 app.use(cors());
+// GitHub webhook needs raw body for HMAC signature verification — must come before express.json()
+app.use("/api/webhooks/github", express.raw({ type: "application/json" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
