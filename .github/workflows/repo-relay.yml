@@ -1,44 +1,4 @@
-name: Discord Push Notify Debug
-
-on:
-  push:
-    branches:
-      - main
-      - 'release/*'
-
-jobs:
-  notify:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Show runner info
-        run: |
-          echo "Runner: $(uname -a)"
-          echo "Shell: $SHELL"
-          echo "GitHub actor: $GITHUB_ACTOR"
-          echo "Event path: $GITHUB_EVENT_PATH"
-      
-      - name: Validate webhook secret
-        env:
-          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: |
-          if [ -z "$WEBHOOK" ]; then
-            echo "::error::DISCORD_WEBHOOK secret not set or empty"
-            exit 10
-          fi
-          echo "DISCORD_WEBHOOK is set (hidden)."
-
-      - name: Show event payload (first 2000 chars)
-        run: |
-          echo "=== EVENT PAYLOAD START ==="
-          head -c 2000 "$GITHUB_EVENT_PATH" || true
-          echo "=== EVENT PAYLOAD END ==="
-
-      - name: Install jq (ensures jq present)
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y jq
-
-      - name: Parse commits and build payload (verbose)
+      - name: Parse commits and build payload (robust)
         env:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           REPO: ${{ github.repository }}
@@ -47,33 +7,50 @@ jobs:
           ACTOR_AVATAR: https://github.com/${{ github.actor }}.png
         shell: bash
         run: |
-          set -o pipefail
+          set -euo pipefail
+
           EVENT="$GITHUB_EVENT_PATH"
-          # Safety: ensure file exists
           if [ ! -f "$EVENT" ]; then
             echo "::error::GITHUB_EVENT_PATH ($EVENT) not found"
             exit 11
           fi
 
-          # Try to extract commits array length
+          # Ensure jq is available
+          if ! command -v jq >/dev/null 2>&1; then
+            echo "::error::jq not installed"
+            exit 20
+          fi
+
+          # Count commits safely
           commits_count=$(jq -r 'if .commits then (.commits | length) else 0 end' "$EVENT") || {
-            echo "::error::jq failed to read commits"
+            echo "::error::Failed to read commits from event payload"
             exit 12
           }
           echo "Commits count: $commits_count"
 
-          # Build commit list safely (max 6)
           commits_md=""
           if [ "$commits_count" -gt 0 ]; then
-            idx=0
-            jq -c '.commits[]' "$EVENT" | while IFS= read -r commit; do
-              sha=$(echo "$commit" | jq -r '.id // empty')
+            for i in $(seq 0 $((commits_count - 1))); do
+              sha=$(jq -r --argjson idx "$i" '.commits[$idx].id // empty' --argjson idx "$i" "$EVENT")
+              # fallback if id missing
+              if [ -z "$sha" ]; then
+                echo "::warning::commit[$i] has no id; skipping"
+                continue
+              fi
               short=${sha:0:7}
-              msg=$(echo "$commit" | jq -r '.message // "<no message>"' | tr '\n' ' ')
-              author_name=$(echo "$commit" | jq -r '.author.name // .author.username // "unknown"' )
+              msg=$(jq -r --argjson idx "$i" '.commits[$idx].message // "<no message>"' --argjson idx "$i" "$EVENT" | tr '\n' ' ')
+              author_name=$(jq -r --argjson idx "$i" '.commits[$idx].author.name // .commits[$idx].author.username // "unknown"' --argjson idx "$i" "$EVENT")
+              author_username=$(jq -r --argjson idx "$i" '.commits[$idx].author.username // empty' --argjson idx "$i" "$EVENT")
+              if [ -n "$author_username" ] && [ "$author_username" != "null" ]; then
+                author_avatar="https://github.com/${author_username}.png"
+              else
+                author_avatar="$ACTOR_AVATAR"
+              fi
               commits_md="${commits_md}• [\`${short}\`](${REPO_URL}/commit/${sha}) — ${msg} — *${author_name}*\n"
-              idx=$((idx+1))
-              [ $idx -ge 6 ] && break
+              # limit to 6 commits
+              if [ "$(echo -n "$commits_md" | grep -c '• ')" -ge 6 ]; then
+                break
+              fi
             done
           fi
 
@@ -86,7 +63,11 @@ jobs:
           title="Push to ${branch} in ${REPO}"
           description="**Pusher:** ${ACTOR}\n\n${commits_md}"
 
-          payload=$(jq -n --arg t "$title" --arg d "$description" --arg actor "$ACTOR" --arg actor_avatar "$ACTOR_AVATAR" --arg url "$REPO_URL" '{
+          payload=$(jq -n --arg t "$title" \
+                          --arg d "$description" \
+                          --arg url "$REPO_URL" \
+                          --arg actor "$ACTOR" \
+                          --arg actor_avatar "$ACTOR_AVATAR" '{
             embeds: [
               {
                 title: $t,
