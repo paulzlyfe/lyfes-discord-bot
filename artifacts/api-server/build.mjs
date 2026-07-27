@@ -43,6 +43,7 @@ async function buildAll() {
       "utf-8-validate",
       "@discordjs/voice",
       "play-dl",
+      "@distube/ytdl-core",
       "opusscript",
       "libsodium-wrappers",
       "@sodium-native",

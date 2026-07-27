@@ -4,10 +4,13 @@ import {
   createAudioResource,
   AudioPlayerStatus,
   VoiceConnectionStatus,
+  StreamType,
   entersState,
 } from "@discordjs/voice";
-import type { VoiceChannel, StageChannel } from "discord.js";
+import type { Readable } from "node:stream";
+import type { VoiceChannel, StageChannel, TextChannel } from "discord.js";
 import playdl from "play-dl";
+import ytdl from "@distube/ytdl-core";
 import { logger } from "../logger";
 import type { TextBasedChannel } from "discord.js";
 
@@ -36,6 +39,16 @@ function createState(): GuildMusicState {
   };
 }
 
+async function getStream(url: string): Promise<{ stream: Readable; type: StreamType }> {
+  // Use ytdl-core to get an audio-only stream — reliable against current YouTube
+  const stream = ytdl(url, {
+    filter: "audioonly",
+    quality: "highestaudio",
+    highWaterMark: 1 << 25, // 32 MB buffer — prevents stuttering on slower pipes
+  }) as unknown as Readable;
+  return { stream, type: StreamType.Arbitrary };
+}
+
 async function playNext(guildId: string): Promise<void> {
   const state = states.get(guildId);
   if (!state) return;
@@ -52,11 +65,11 @@ async function playNext(guildId: string): Promise<void> {
   state.currentSong = next;
 
   try {
-    const stream = await playdl.stream(next.url, { quality: 2 });
-    const resource = createAudioResource(stream.stream, { inputType: stream.type });
+    const { stream, type } = await getStream(next.url);
+    const resource = createAudioResource(stream, { inputType: type });
     state.player.play(resource);
     if (state.textChannel?.isTextBased()) {
-      await (state.textChannel as import("discord.js").TextChannel).send(
+      await (state.textChannel as TextChannel).send(
         `▶ Now playing: **${next.title}**`,
       );
     }
@@ -78,14 +91,18 @@ export function getMusicService() {
       voiceChannel: VoiceChannel | StageChannel,
       textChannel: TextBasedChannel,
     ): Promise<{ title: string; queued: boolean }> {
-      // Resolve the song info
+      // Resolve song metadata
       let url = query;
       let title = query;
 
       const isUrl = /^https?:\/\//.test(query);
       if (isUrl) {
-        const info = await playdl.video_info(query).catch(() => null);
-        title = info?.video_details?.title ?? query;
+        try {
+          const info = await ytdl.getBasicInfo(url);
+          title = info.videoDetails.title;
+        } catch {
+          title = query;
+        }
       } else {
         const results = await playdl.search(query, { source: { youtube: "video" }, limit: 1 });
         if (!results.length) throw new Error("No results found for that search.");
@@ -118,8 +135,19 @@ export function getMusicService() {
         });
 
         state.player.on("error", (err) => {
-          logger.error({ err }, "Audio player error");
+          logger.error({ err }, "Audio player error, skipping");
           playNext(guildId).catch(() => {});
+        });
+
+        // Disconnect listener — clean up state if connection drops externally
+        connection.on(VoiceConnectionStatus.Disconnected, async () => {
+          try {
+            // Give Discord 5s to reconnect before giving up
+            await entersState(connection, VoiceConnectionStatus.Ready, 5_000);
+          } catch {
+            connection.destroy();
+            states.delete(guildId);
+          }
         });
 
         try {

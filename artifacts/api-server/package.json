@@ -12,6 +12,7 @@
   "dependencies": {
     "@discordjs/rest": "^2.6.3",
     "@discordjs/voice": "^0.19.2",
+    "@distube/ytdl-core": "^4.16.12",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "cookie-parser": "^1.4.7",
