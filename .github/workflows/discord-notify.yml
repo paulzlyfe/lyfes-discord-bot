@@ -20,8 +20,4 @@ jobs:
       - name: Run Discord notify action
         uses: ./.github/actions/discord-notify
         with:
-          # optional: override or leave empty to use secrets
-          # webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          # bot-token: ${{ secrets.DISCORD_BOT_TOKEN }}
-          # channel-id: ${{ secrets.DISCORD_CHANNEL_ID }}
           max-embed-chars: '6000'

@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Debug trap
 trap 'rc=$?; echo "::error::Command failed at line ${LINENO} with exit code ${rc}"; exit $rc' ERR
 
-# Environment fallbacks
 WEBHOOK="${WEBHOOK:-}"
 BOT_TOKEN="${BOT_TOKEN:-}"
 CHANNEL_ID="${CHANNEL_ID:-}"
@@ -22,7 +20,6 @@ MAX_COMMIT_LINES="${MAX_COMMIT_LINES:-6}"
 MAX_FILE_LIST="${MAX_FILE_LIST:-20}"
 MAX_DIFF_BYTES="${MAX_DIFF_BYTES:-5000}"
 
-# Basic checks
 if [ -z "$WEBHOOK" ]; then
   echo "::error::DISCORD_WEBHOOK not provided"
   exit 10
@@ -41,7 +38,6 @@ shorten() {
   if [ ${#s} -le "$max" ]; then printf "%s" "$s"; else printf "%s..." "${s:0:$((max-3))}"; fi
 }
 
-# Build event-specific message (safe parsing)
 title=""
 description=""
 thumbnail="https://github.com/${REPO%%/*}.png"
@@ -78,7 +74,6 @@ case "$EVENT_NAME" in
     pr_url=$(jq -r '.pull_request.html_url // ""' "$EVENT_FILE" || echo "")
     title="PR #${pr_number}: ${pr_title}"
     description="**Author:** ${pr_user}\n[View PR](${pr_url})"
-    # Add checks summary if token present
     if [ -n "$GITHUB_TOKEN" ]; then
       head_sha=$(jq -r '.pull_request.head.sha // ""' "$EVENT_FILE" || echo "")
       if [ -n "$head_sha" ]; then
@@ -88,7 +83,6 @@ case "$EVENT_NAME" in
         fi
       fi
     fi
-    # Files and small diffs (tolerant)
     base_ref=$(jq -r '.pull_request.base.ref // ""' "$EVENT_FILE" || echo "")
     head_ref=$(jq -r '.pull_request.head.ref // ""' "$EVENT_FILE" || echo "")
     if [ -n "$base_ref" ] && [ -n "$head_ref" ]; then
@@ -127,7 +121,6 @@ case "$EVENT_NAME" in
     ;;
 esac
 
-# Build embed and cap size
 embed=$(jq -n --arg t "$title" --arg d "$description" --arg u "$url" --arg an "$author_name" --arg ai "$author_icon" --arg th "$thumbnail" '{
   title: $t, description: $d, url: $u, color: 3066993,
   author: { name: $an, icon_url: $ai }, thumbnail: { url: $th }
@@ -143,14 +136,12 @@ payload=$(jq -n --argjson e "$embed" '{embeds: [$e]}')
 payload_len=$(echo -n "$payload" | wc -c)
 echo "Payload size: ${payload_len} bytes"
 
-# Post and capture response
 http_code=$(curl -s -o /tmp/discord_resp -w "%{http_code}" -H "Content-Type: application/json" -d "$payload" "$WEBHOOK" || true)
 echo "Discord webhook HTTP status: $http_code"
 if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
   echo "Message posted successfully."
   message_id=$(jq -r '.id // empty' /tmp/discord_resp || true)
   if [ -n "$message_id" ] && [ -n "$BOT_TOKEN" ] && [ -n "$CHANNEL_ID" ]; then
-    # Try to create a thread (best-effort)
     thread_name="GH-${EVENT_NAME}-${SHA:0:7}"
     create_thread_resp=$(curl -s -X POST "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages/${message_id}/threads" \
       -H "Authorization: Bot ${BOT_TOKEN}" \
