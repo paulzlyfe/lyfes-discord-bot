@@ -1,19 +1,59 @@
-name: Discord Notify
+name: Discord Push Notify
 
 on:
   push:
+    branches:
+      - main
+      - 'release/*'
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Send push notification to Discord
+      - name: Build push payload and send to Discord
         env:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref }}
+          Pusher: ${{ github.actor }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_URL: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
         run: |
           if [ -z "$WEBHOOK" ]; then
             echo "DISCORD_WEBHOOK secret not set"
             exit 1
           fi
-          payload="{\"content\":\"New push to ${GITHUB_REPOSITORY} by ${GITHUB_ACTOR}: ${GITHUB_SHA}\"}"
-          curl -H "Content-Type: application/json" -d "$payload" "$WEBHOOK"
+
+          # Collect up to 5 commit messages
+          commits=""
+          count=0
+          for sha in $(jq -r '.commits[].id' < "$GITHUB_EVENT_PATH"); do
+            msg=$(jq -r --arg s "$sha" '.commits[] | select(.id==$s) | .message' < "$GITHUB_EVENT_PATH" | head -n1)
+            author=$(jq -r --arg s "$sha" '.commits[] | select(.id==$s) | .author.name' < "$GITHUB_EVENT_PATH" | head -n1)
+            short=${sha:0:7}
+            commits="$commits• [$short](https://github.com/$REPO/commit/$sha) — $msg ($author)\n"
+            count=$((count+1))
+            [ $count -ge 5 ] && break
+          done
+
+          # Fallback if no commits parsed (safety)
+          if [ -z "$commits" ]; then
+            commits="• $COMMIT_SHA — $COMMIT_URL"
+          fi
+
+          branch=${REF#refs/heads/}
+          title="Push to ${branch} in ${REPO}"
+          description="Pusher: **${Pusher}**\n\n${commits}"
+
+          payload=$(jq -n --arg t "$title" --arg d "$description" '{
+            embeds: [
+              {
+                title: $t,
+                description: $d,
+                color: 3066993,
+                url: $ENV.COMMIT_URL
+              }
+            ]
+          }')
+
+          curl -s -H "Content-Type: application/json" -d "$payload" "$WEBHOOK"
