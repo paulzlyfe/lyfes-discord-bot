@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  bot:
+    image: ${DOCKER_IMAGE:-lyfes-bot:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      # ── Discord ──────────────────────────────────────────
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      # ── Database (Neon) ──────────────────────────────────
+      DATABASE_URL: ${DATABASE_URL}
+      # ── Auth / Webhooks ──────────────────────────────────
+      SESSION_SECRET: ${SESSION_SECRET}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
+      # ── Streaming APIs ───────────────────────────────────
+      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID}
+      TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
+      YOUTUBE_COOKIE: ${YOUTUBE_COOKIE}
+    ports:
+      - "8080:8080"

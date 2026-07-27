@@ -1,0 +1,11 @@
+node_modules
+**/node_modules
+**/dist
+**/.tsbuildinfo
+artifacts/mockup-sandbox
+.git
+.local
+.agents
+attached_assets
+**/bin/yt-dlp
+**/*.map
