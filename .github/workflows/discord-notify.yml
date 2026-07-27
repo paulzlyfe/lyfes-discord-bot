@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      checks: read
     steps:
       - name: Validate webhook secret
         env:
@@ -28,14 +29,31 @@ jobs:
           fi
           echo "DISCORD_WEBHOOK is set (hidden)."
 
+      - name: Optional thread config check
+        env:
+          BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN || '' }}
+          CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID || '' }}
+        run: |
+          if [ -n "$BOT_TOKEN" ] && [ -z "$CHANNEL_ID" ]; then
+            echo "::warning::DISCORD_BOT_TOKEN is set but DISCORD_CHANNEL_ID is missing; threaded updates will be skipped."
+          fi
+          echo "Threading config checked."
+
+      - name: Checkout repository (for diffs)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Install dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y jq
+          sudo apt-get install -y jq git
 
-      - name: Build and send Discord payload
+      - name: Build and send Discord payload (production)
         env:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN || '' }}
+          CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID || '' }}
           REPO: ${{ github.repository }}
           REPO_URL: https://github.com/${{ github.repository }}
           REPO_OWNER: ${{ github.repository_owner }}
@@ -45,6 +63,8 @@ jobs:
           MAX_EMBED_CHARS: 6000
           MAX_COMMIT_LINES: 6
           MAX_COMMIT_MSG_LEN: 200
+          MAX_FILE_LIST: 20
+          MAX_DIFF_BYTES: 5000
         shell: bash
         run: |
           set -euo pipefail
@@ -52,13 +72,13 @@ jobs:
           EVENT_FILE="$GITHUB_EVENT_PATH"
           EVENT_NAME="$GITHUB_EVENT_NAME"
           BRANCH=${GITHUB_REF#refs/heads/}
+          OWNER="${GITHUB_REPOSITORY_OWNER:-${REPO_OWNER}}"
 
           if [ ! -f "$EVENT_FILE" ]; then
             echo "::error::GITHUB_EVENT_PATH ($EVENT_FILE) not found"
             exit 11
           fi
 
-          # Helpers
           shorten() {
             local s="$1"
             local max=$2
@@ -69,17 +89,59 @@ jobs:
             fi
           }
 
-          safe_json_escape() {
-            jq -Rs '.' <<<"$1"
-          }
-
-          # Build event-specific content
+          # Default embed fields
           title=""
           description=""
           thumbnail="$OWNER_AVATAR"
           author_name="$ACTOR"
           author_icon="$ACTOR_AVATAR"
           url="$REPO_URL"
+
+          # Helper: fetch check runs for a commit SHA
+          fetch_check_runs() {
+            local sha="$1"
+            # Use GITHUB_TOKEN provided by Actions
+            curl -s -H "Accept: application/vnd.github+json" \
+                 -H "Authorization: Bearer $GITHUB_TOKEN" \
+                 "https://api.github.com/repos/${REPO}/commits/${sha}/check-runs" \
+                 | jq -r '.check_runs[] | "\(.name): \(.conclusion // .status) - \(.html_url // "")"' || true
+          }
+
+          # Helper: build file list and small diffs between base and head
+          build_file_list_and_diffs() {
+            local base="$1"
+            local head="$2"
+            local files
+            files=$(git fetch origin "$base":"refs/tmp/base" >/dev/null 2>&1 || true; git diff --name-only refs/tmp/base "$head" || git diff --name-only "$base" "$head" || true)
+            if [ -z "$files" ]; then
+              echo ""
+              return
+            fi
+            local count=0
+            local out=""
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              count=$((count+1))
+              if [ $count -gt $MAX_FILE_LIST ]; then
+                out="${out}• ...and more files (truncated)\n"
+                break
+              fi
+              out="${out}• ${f}\n"
+              # include small diff snippet if file is small
+              if [ -f "$f" ]; then
+                size=$(wc -c < "$f" || echo 0)
+                if [ "$size" -le $MAX_DIFF_BYTES ]; then
+                  diff_snip=$(git diff --no-color --unified=0 refs/tmp/base "$head" -- "$f" 2>/dev/null | sed -n '1,200p' | sed 's/`/`/g')
+                  if [ -n "$diff_snip" ]; then
+                    # shorten diff snippet to 1000 chars
+                    diff_snip=$(printf "%s" "$diff_snip" | head -c 1000)
+                    out="${out}\`\`\`diff\n${diff_snip}\n\`\`\`\n"
+                  fi
+                fi
+              fi
+            done <<< "$files"
+            echo -n "$out"
+          }
 
           case "$EVENT_NAME" in
             push)
@@ -95,14 +157,7 @@ jobs:
                   msg=$(jq -r --argjson idx "$i" '.commits[$idx].message // "<no message>"' --argjson idx "$i" "$EVENT_FILE" | tr '\n' ' ')
                   msg=$(shorten "$msg" $MAX_COMMIT_MSG_LEN)
                   author_name_commit=$(jq -r --argjson idx "$i" '.commits[$idx].author.name // .commits[$idx].author.username // "unknown"' --argjson idx "$i" "$EVENT_FILE")
-                  author_username=$(jq -r --argjson idx "$i" '.commits[$idx].author.username // empty' --argjson idx "$i" "$EVENT_FILE")
-                  if [ -n "$author_username" ] && [ "$author_username" != "null" ]; then
-                    author_avatar_commit="https://github.com/${author_username}.png"
-                  else
-                    author_avatar_commit="$ACTOR_AVATAR"
-                  fi
                   commits_md+="• [\`${short}\`](${REPO_URL}/commit/${sha}) — ${msg} — *${author_name_commit}*\n"
-                  # limit lines
                   lines=$(echo -n "$commits_md" | grep -c '• ' || true)
                   if [ "$lines" -ge $MAX_COMMIT_LINES ]; then
                     break
@@ -123,15 +178,37 @@ jobs:
               pr_title=$(jq -r '.pull_request.title' "$EVENT_FILE" | tr '\n' ' ')
               pr_user=$(jq -r '.pull_request.user.login' "$EVENT_FILE")
               pr_url=$(jq -r '.pull_request.html_url' "$EVENT_FILE")
+              pr_head_sha=$(jq -r '.pull_request.head.sha' "$EVENT_FILE")
+              pr_base_ref=$(jq -r '.pull_request.base.ref' "$EVENT_FILE")
+              pr_head_ref=$(jq -r '.pull_request.head.ref' "$EVENT_FILE")
+
               title="PR #${pr_number} ${pr_action}: ${pr_title}"
-              description="**Author:** ${pr_user}\n**Action:** ${pr_action}\n[View PR](${pr_url})"
+              description="**Author:** ${pr_user}\n**Action:** ${pr_action}\n[View PR](${pr_url})\n\n"
+
+              # Add check runs summary
+              checks=$(fetch_check_runs "$pr_head_sha" || true)
+              if [ -n "$checks" ]; then
+                description="${description}**Checks:**\n"
+                while IFS= read -r line; do
+                  [ -z "$line" ] && continue
+                  description="${description}• ${line}\n"
+                done <<< "$checks"
+                description="${description}\n"
+              fi
+
+              # Add file list and small diffs
+              echo "Building file list and diffs between ${pr_base_ref} and ${pr_head_ref}..."
+              files_and_diffs=$(build_file_list_and_diffs "$pr_base_ref" "$pr_head_ref" || true)
+              if [ -n "$files_and_diffs" ]; then
+                description="${description}**Files changed:**\n${files_and_diffs}"
+              fi
+
               author_name="$pr_user"
               author_icon="https://github.com/${pr_user}.png"
               url="$pr_url"
               ;;
 
             release)
-              rel_action=$(jq -r '.action' "$EVENT_FILE")
               rel_tag=$(jq -r '.release.tag_name' "$EVENT_FILE")
               rel_name=$(jq -r '.release.name // ""' "$EVENT_FILE")
               rel_url=$(jq -r '.release.html_url' "$EVENT_FILE")
@@ -169,34 +246,70 @@ jobs:
             thumbnail: { url: $th }
           }')
 
-          # Ensure embed length under MAX_EMBED_CHARS
           embed_len=$(echo -n "$embed" | wc -c)
           if [ "$embed_len" -gt "$MAX_EMBED_CHARS" ]; then
             echo "::warning::Embed size ($embed_len) exceeds limit ($MAX_EMBED_CHARS). Truncating description."
-            # Truncate description safely
             short_desc=$(shorten "$description" 1000)
             embed=$(jq -n --arg t "$title" --arg d "$short_desc" --arg u "$url" --arg an "$author_name" --arg ai "$author_icon" --arg th "$thumbnail" '{ title: $t, description: $d, url: $u, color: 3066993, author: { name: $an, icon_url: $ai }, thumbnail: { url: $th } }')
           fi
 
           payload=$(jq -n --argjson e "$embed" '{embeds: [$e]}')
 
-          # Final payload size check
+          # Final payload size guard (Discord has limits; keep conservative)
           payload_len=$(echo -n "$payload" | wc -c)
-          if [ "$payload_len" -gt 1900 ]; then
-            echo "::warning::Payload size ($payload_len) is large; Discord may reject it. Trimming further."
-            # Reduce commit lines to 3 and shorten messages
-            description=$(echo "$description" | sed -n '1,200p')
+          if [ "$payload_len" -gt 6000 ]; then
+            echo "::warning::Payload size ($payload_len) is large; trimming description."
+            # aggressive trim
+            description=$(shorten "$description" 800)
             embed=$(jq -n --arg t "$title" --arg d "$description" --arg u "$url" --arg an "$author_name" --arg ai "$author_icon" --arg th "$thumbnail" '{ title: $t, description: $d, url: $u, color: 3066993, author: { name: $an, icon_url: $ai }, thumbnail: { url: $th } }')
             payload=$(jq -n --argjson e "$embed" '{embeds: [$e]}')
+            payload_len=$(echo -n "$payload" | wc -c)
           fi
 
-          echo "Payload size: $(echo -n "$payload" | wc -c) bytes"
+          echo "Payload size: ${payload_len} bytes"
 
-          http_status=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -d "$payload" "$WEBHOOK" || true)
-          echo "Discord webhook HTTP status: $http_status"
-          if [ "$http_status" -ge 200 ] && [ "$http_status" -lt 300 ]; then
-            echo "Message posted successfully."
+          # Post via webhook and capture response (message JSON)
+          resp=$(curl -s -H "Content-Type: application/json" -d "$payload" "$WEBHOOK" || true)
+          # Try to extract message id if webhook returned JSON
+          message_id=$(echo "$resp" | jq -r '.id // empty' || true)
+          http_status=$(echo "$resp" | jq -r '.code // empty' || true)
+
+          # If webhook returned an HTTP status code instead of JSON, try a status check
+          if [ -z "$message_id" ]; then
+            # Try a simple status check by re-sending but capturing HTTP code
+            http_status=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -d "$payload" "$WEBHOOK" || true)
+            echo "Discord webhook HTTP status: $http_status"
+            if [ "$http_status" -ge 200 ] && [ "$http_status" -lt 300 ]; then
+              echo "Message posted successfully (no message id returned)."
+            else
+              echo "::error::Discord webhook returned HTTP status $http_status"
+              exit 13
+            fi
           else
-            echo "::error::Discord webhook returned HTTP status $http_status"
-            exit 13
+            echo "Message posted; message id: $message_id"
           fi
+
+          # Threaded PR updates: create a thread from the message if bot token and channel id are provided and this is a PR event
+          if [ "$EVENT_NAME" = "pull_request" ] && [ -n "${BOT_TOKEN:-}" ] && [ -n "${CHANNEL_ID:-}" ] && [ -n "${message_id:-}" ]; then
+            thread_name="PR-${pr_number}-${pr_head_ref}"
+            echo "Creating thread '${thread_name}' from message ${message_id} in channel ${CHANNEL_ID}..."
+            create_thread_resp=$(curl -s -X POST "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages/${message_id}/threads" \
+              -H "Authorization: Bot ${BOT_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "{\"name\":\"${thread_name}\",\"auto_archive_duration\":1440}" || true)
+            thread_id=$(echo "$create_thread_resp" | jq -r '.id // empty' || true)
+            if [ -n "$thread_id" ]; then
+              echo "Thread created: $thread_id"
+              # Optionally post a starter message in the thread
+              if [ -n "$BOT_TOKEN" ]; then
+                curl -s -X POST "https://discord.com/api/v10/channels/${thread_id}/messages" \
+                  -H "Authorization: Bot ${BOT_TOKEN}" \
+                  -H "Content-Type: application/json" \
+                  -d "{\"content\":\"Thread for PR #${pr_number} updates. Use this thread for discussion.\"}" >/dev/null || true
+              fi
+            else
+              echo "::warning::Failed to create thread; response: $create_thread_resp"
+            fi
+          fi
+
+          echo "Done."
