@@ -98,6 +98,7 @@ function killProc(state: GuildMusicState): void {
 function teardown(guildId: string): void {
   const state = states.get(guildId);
   if (!state) return;
+  if (state.idleTimer) { clearTimeout(state.idleTimer); state.idleTimer = null; }
   killProc(state);
   state.queue = [];
   state.currentSong = null;
