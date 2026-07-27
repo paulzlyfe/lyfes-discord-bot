@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 trap 'rc=$?; echo "::error::Command failed at line ${LINENO} with exit code ${rc}"; exit $rc' ERR
 
 WEBHOOK="${WEBHOOK:-}"
+USE_BOT="${USE_BOT:-false}"
 BOT_TOKEN="${BOT_TOKEN:-}"
 CHANNEL_ID="${CHANNEL_ID:-}"
 REPO="${REPO:-}"
@@ -20,14 +20,21 @@ MAX_COMMIT_LINES="${MAX_COMMIT_LINES:-6}"
 MAX_FILE_LIST="${MAX_FILE_LIST:-20}"
 MAX_DIFF_BYTES="${MAX_DIFF_BYTES:-5000}"
 
-if [ -z "$WEBHOOK" ]; then
-  echo "::error::DISCORD_WEBHOOK not provided"
+if [ "${USE_BOT,,}" != "true" ] && [ -z "$WEBHOOK" ]; then
+  echo "::error::DISCORD_WEBHOOK not provided and use-bot is not enabled"
   exit 10
 fi
+
+if [ "${USE_BOT,,}" = "true" ] && ( [ -z "$BOT_TOKEN" ] || [ -z "$CHANNEL_ID" ] ); then
+  echo "::error::BOT_TOKEN or CHANNEL_ID missing for bot mode"
+  exit 20
+fi
+
 if ! command -v jq >/dev/null 2>&1; then
   echo "::error::jq not installed"
   exit 11
 fi
+
 if [ ! -f "$EVENT_FILE" ]; then
   echo "::error::GITHUB_EVENT_PATH ($EVENT_FILE) not found"
   exit 12
@@ -136,8 +143,27 @@ payload=$(jq -n --argjson e "$embed" '{embeds: [$e]}')
 payload_len=$(echo -n "$payload" | wc -c)
 echo "Payload size: ${payload_len} bytes"
 
-http_code=$(curl -s -o /tmp/discord_resp -w "%{http_code}" -H "Content-Type: application/json" -d "$payload" "$WEBHOOK" || true)
-echo "Discord webhook HTTP status: $http_code"
+# choose send method
+send_via_webhook() {
+  curl -s -o /tmp/discord_resp -w "%{http_code}" \
+    -H "Content-Type: application/json" -d "$payload" "$WEBHOOK" || true
+}
+
+send_via_bot() {
+  curl -s -o /tmp/discord_resp -w "%{http_code}" \
+    -H "Authorization: Bot ${BOT_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "$payload" "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages" || true
+}
+
+if [ "${USE_BOT,,}" = "true" ]; then
+  http_code=$(send_via_bot)
+  echo "Discord bot HTTP status: $http_code"
+else
+  http_code=$(send_via_webhook)
+  echo "Discord webhook HTTP status: $http_code"
+fi
+
 if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
   echo "Message posted successfully."
   message_id=$(jq -r '.id // empty' /tmp/discord_resp || true)
@@ -155,7 +181,7 @@ if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
     fi
   fi
 else
-  echo "::error::Discord webhook returned HTTP status $http_code"
+  echo "::error::Discord webhook/bot returned HTTP status $http_code"
   head -c 4000 /tmp/discord_resp || true
   exit 30
 fi

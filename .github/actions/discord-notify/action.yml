@@ -7,6 +7,10 @@ inputs:
   bot-token:
     description: 'Optional Discord bot token for thread creation'
     required: false
+  use-bot:
+    description: 'Set to "true" to use a Discord bot token and channel id instead of webhook'
+    required: false
+    default: 'false'
   channel-id:
     description: 'Optional Discord channel id for thread creation'
     required: false
@@ -25,13 +29,18 @@ runs:
     - name: Setup runtime
       shell: bash
       run: |
-        sudo apt-get update -y
-        sudo apt-get install -y jq git
+        if ! command -v jq >/dev/null 2>&1; then
+          if command -v apt-get >/dev/null 2>&1; then
+            sudo apt-get update -y
+            sudo apt-get install -y jq git
+          fi
+        fi
 
     - name: Run discord notify script
       shell: bash
       env:
         WEBHOOK: ${{ inputs.webhook || secrets.DISCORD_WEBHOOK }}
+        USE_BOT: ${{ inputs.use-bot }}
         BOT_TOKEN: ${{ inputs.bot-token || secrets.DISCORD_BOT_TOKEN }}
         CHANNEL_ID: ${{ inputs.channel-id || secrets.DISCORD_CHANNEL_ID }}
         REPO: ${{ github.repository }}
