@@ -2,9 +2,7 @@ name: Discord Notify (Production)
 
 on:
   push:
-    branches:
-      - main
-      - 'release/*'
+    branches: [ main, 'release/*' ]
   pull_request:
     types: [opened, reopened, closed, synchronized]
   release:
@@ -14,138 +12,16 @@ on:
 
 jobs:
   notify:
-    # Guard: avoid duplicate/empty push triggers (skip when push before==after)
-    if: ${{ github.event_name != 'push' || github.event.before != github.event.after }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       checks: read
     steps:
-      - name: Validate webhook secret
-        env:
-          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: |
-          if [ -z "${WEBHOOK:-}" ]; then
-            echo "::error::DISCORD_WEBHOOK secret not set or empty"
-            exit 10
-          fi
-          echo "DISCORD_WEBHOOK is set (hidden)."
-
-      - name: Optional thread config check
-        env:
-          BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
-        run: |
-          # Check secrets at runtime; avoid using secrets in 'if' expressions
-          if [ -n "${BOT_TOKEN:-}" ] && [ -z "${CHANNEL_ID:-}" ]; then
-            echo "::warning::DISCORD_BOT_TOKEN is set but DISCORD_CHANNEL_ID is missing; threaded updates will be skipped."
-          fi
-          echo "Threading config checked."
-
-      - name: Checkout repository (for diffs)
-        uses: actions/checkout@v4
+      - name: Run Discord notify action
+        uses: ./.github/actions/discord-notify
         with:
-          fetch-depth: 0
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y jq git
-
-      - name: Restore last-posted SHA (cache)
-        id: cache-restore
-        uses: actions/cache@v4
-        with:
-          path: last_posted_sha.txt
-          key: discord-last-sha-${{ github.repository }}
-          restore-keys: |
-            discord-last-sha-${{ github.repository }}-
-
-      - name: Read last posted SHA
-        id: read-last
-        run: |
-          LAST=""
-          if [ -f last_posted_sha.txt ]; then
-            LAST=$(cat last_posted_sha.txt)
-          fi
-          echo "last=$LAST" >> $GITHUB_OUTPUT
-
-      - name: Skip if already posted
-        if: ${{ steps.read-last.outputs.last == github.sha }}
-        run: |
-          echo "Already posted SHA $GITHUB_SHA; skipping."
-          exit 0
-
-      - name: Build and send Discord payload (production)
-        env:
-          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
-          REPO: ${{ github.repository }}
-          REPO_URL: https://github.com/${{ github.repository }}
-          REPO_OWNER: ${{ github.repository_owner }}
-          ACTOR: ${{ github.actor }}
-          ACTOR_AVATAR: https://github.com/${{ github.actor }}.png
-          OWNER_AVATAR: https://github.com/${{ github.repository_owner }}.png
-          MAX_EMBED_CHARS: 6000
-          MAX_COMMIT_LINES: 6
-          MAX_COMMIT_MSG_LEN: 200
-          MAX_FILE_LIST: 20
-          MAX_DIFF_BYTES: 5000
-        shell: bash
-        run: |
-          # Debug-friendly, robust payload builder
-          set -euo pipefail
-          set -x
-          trap 'rc=$?; echo "::error::Command failed at line ${LINENO} with exit code ${rc}"; echo "Failed command: $BASH_COMMAND"; if [ -f /tmp/discord_resp ]; then echo "---- /tmp/discord_resp (first 4000 bytes) ----"; head -c 4000 /tmp/discord_resp || true; echo "---- end response ----"; fi; exit $rc' ERR
-
-          # Sanity checks
-          if [ -z "${WEBHOOK:-}" ]; then
-            echo "::error::DISCORD_WEBHOOK is empty"
-            exit 20
-          fi
-          if ! command -v jq >/dev/null 2>&1; then
-            echo "::error::jq not installed"
-            exit 21
-          fi
-          if [ -z "${GITHUB_EVENT_PATH:-}" ] || [ ! -f "$GITHUB_EVENT_PATH" ]; then
-            echo "::error::GITHUB_EVENT_PATH ($GITHUB_EVENT_PATH) missing"
-            exit 22
-          fi
-
-          EVENT_FILE="$GITHUB_EVENT_PATH"
-          EVENT_NAME="$GITHUB_EVENT_NAME"
-          BRANCH=${GITHUB_REF#refs/heads/}
-          OWNER="${GITHUB_REPOSITORY_OWNER:-${REPO_OWNER:-}}"
-
-          shorten() {
-            local s="$1"; local max=$2
-            if [ ${#s} -le $max ]; then printf "%s" "$s"; else printf "%s..." "${s:0:$((max-3))}"; fi
-          }
-
-          # Default embed fields
-          title=""
-          description=""
-          thumbnail="$OWNER_AVATAR"
-          author_name="$ACTOR"
-          author_icon="$ACTOR_AVATAR"
-          url="$REPO_URL"
-
-          # Helper: fetch check runs for a commit SHA (safe)
-          fetch_check_runs() {
-            local sha="$1"
-            if [ -z "${GITHUB_TOKEN:-}" ]; then
-              return 0
-            fi
-            curl -s -H "Accept: application/vnd.github+json" \
-                 -H "Authorization: Bearer $GITHUB_TOKEN" \
-                 "https://api.github.com/repos/${REPO}/commits/${sha}/check-runs" \
-                 | jq -r '.check_runs[] | "\(.name): \(.conclusion // .status) - \(.html_url // "")"' || true
-          }
-
-          # Helper: build file list and small diffs between base and head (tolerant)
-          build_file_list_and_diffs() {
-            local base="$1"
-            local head="$2"
-            git fetch origin "$base":"refs/tmp/base" >/dev/null 2>&1 || true
-            files=$(git diff
+          # optional: override or leave empty to use secrets
+          # webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          # bot-token: ${{ secrets.DISCORD_BOT_TOKEN }}
+          # channel-id: ${{ secrets.DISCORD_CHANNEL_ID }}
+          max-embed-chars: '6000'
