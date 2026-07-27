@@ -1,0 +1,1 @@
+- [YouTube audio streaming](youtube-streaming.md) — JS scraper libs (play-dl, ytdl-core forks) are broken vs YouTube; always stream via yt-dlp subprocess with cookie file.

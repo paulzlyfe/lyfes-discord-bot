@@ -1,3 +1,8 @@
+import { spawn, type ChildProcess } from "node:child_process";
+import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { Readable } from "node:stream";
 import {
   joinVoiceChannel,
   createAudioPlayer,
@@ -7,40 +12,49 @@ import {
   StreamType,
   entersState,
 } from "@discordjs/voice";
-import type { Readable } from "node:stream";
 import type { VoiceChannel, StageChannel, TextChannel } from "discord.js";
 import playdl from "play-dl";
-import ytdl from "@distube/ytdl-core";
 import { logger } from "../logger";
 import type { TextBasedChannel } from "discord.js";
 
-// Build a cookie-authenticated agent once at startup so all ytdl calls share it.
-// YOUTUBE_COOKIE is the raw "cookie:" request header value copied from DevTools.
-function buildAgent(): ReturnType<typeof ytdl.createAgent> | undefined {
+// ── Cookie file (Netscape format for yt-dlp) ────────────────────────────────
+let cookieDir: string | null = null;
+
+function buildCookieFile(): string | null {
   const raw = process.env["YOUTUBE_COOKIE"];
-  if (!raw) return undefined;
+  if (!raw) return null;
   try {
-    // Parse "name=value; name2=value2; ..." into the array createAgent expects
-    const cookies = raw
-      .split(";")
-      .map((pair) => pair.trim())
-      .filter(Boolean)
-      .map((pair) => {
-        const eq = pair.indexOf("=");
-        return eq === -1
-          ? null
-          : { name: pair.slice(0, eq).trim(), value: pair.slice(eq + 1).trim() };
-      })
-      .filter((c): c is { name: string; value: string } => c !== null);
-    return ytdl.createAgent(cookies);
+    const lines = ["# Netscape HTTP Cookie File"];
+    for (const pair of raw.split(";")) {
+      const eq = pair.indexOf("=");
+      if (eq === -1) continue;
+      const name = pair.slice(0, eq).trim();
+      const value = pair.slice(eq + 1).trim();
+      if (!name) continue;
+      lines.push(`.youtube.com\tTRUE\t/\tTRUE\t0\t${name}\t${value}`);
+    }
+    cookieDir = mkdtempSync(join(tmpdir(), "ytc-"));
+    const file = join(cookieDir, "cookies.txt");
+    writeFileSync(file, lines.join("\n") + "\n", { mode: 0o600 });
+    return file;
   } catch (err) {
-    logger.warn({ err }, "Failed to build YouTube cookie agent — playing without auth");
-    return undefined;
+    logger.warn({ err }, "Failed to write YouTube cookie file — playing without auth");
+    return null;
   }
 }
 
-const ytdlAgent = buildAgent();
+const cookieFile = buildCookieFile();
 
+function cleanupCookieFile(): void {
+  if (cookieDir) {
+    try { rmSync(cookieDir, { recursive: true, force: true }); } catch {}
+    cookieDir = null;
+  }
+}
+process.once("exit", cleanupCookieFile);
+process.once("SIGTERM", () => { cleanupCookieFile(); process.exit(0); });
+
+// ── Types & state ────────────────────────────────────────────────────────────
 interface Song {
   title: string;
   url: string;
@@ -52,6 +66,8 @@ interface GuildMusicState {
   player: ReturnType<typeof createAudioPlayer>;
   connection: ReturnType<typeof joinVoiceChannel> | null;
   textChannel: TextBasedChannel | null;
+  currentProc: ChildProcess | null;
+  advancing: boolean;
 }
 
 const states = new Map<string, GuildMusicState>();
@@ -63,49 +79,97 @@ function createState(): GuildMusicState {
     player: createAudioPlayer(),
     connection: null,
     textChannel: null,
+    currentProc: null,
+    advancing: false,
   };
 }
 
-async function getStream(url: string): Promise<{ stream: Readable; type: StreamType }> {
-  const stream = ytdl(url, {
-    filter: "audioonly",
-    quality: "highestaudio",
-    highWaterMark: 1 << 25,
-    ...(ytdlAgent ? { agent: ytdlAgent } : {}),
-  }) as unknown as Readable;
-  return { stream, type: StreamType.Arbitrary };
+function killProc(state: GuildMusicState): void {
+  if (state.currentProc && state.currentProc.exitCode === null && !state.currentProc.killed) {
+    try { state.currentProc.kill("SIGKILL"); } catch {}
+  }
+  state.currentProc = null;
 }
 
-async function playNext(guildId: string): Promise<void> {
+function teardown(guildId: string): void {
   const state = states.get(guildId);
   if (!state) return;
+  killProc(state);
+  state.queue = [];
+  state.currentSong = null;
+  try { state.player.stop(true); } catch {}
+  try { state.connection?.destroy(); } catch {}
+  state.connection = null;
+  states.delete(guildId);
+}
 
-  const next = state.queue.shift();
-  if (!next) {
-    state.currentSong = null;
-    state.connection?.destroy();
-    state.connection = null;
-    states.delete(guildId);
-    return;
-  }
+// ── Streaming via yt-dlp ─────────────────────────────────────────────────────
+function getStream(url: string): { stream: Readable; proc: ChildProcess } {
+  const args = [
+    "-f", "bestaudio/best",
+    "-o", "-",
+    "--no-playlist",
+    "--quiet",
+    "--no-warnings",
+    ...(cookieFile ? ["--cookies", cookieFile] : []),
+    url,
+  ];
+  const proc = spawn("yt-dlp", args, { stdio: ["ignore", "pipe", "pipe"] });
 
-  state.currentSong = next;
+  let stderr = "";
+  proc.stderr!.on("data", (d: Buffer) => { stderr += d.toString(); });
+  proc.on("close", (code) => {
+    if (code !== 0 && code !== null) {
+      logger.error({ code, stderr: stderr.slice(0, 500) }, "yt-dlp exited with error");
+    }
+  });
+  proc.on("error", (err) => logger.error({ err }, "yt-dlp spawn error"));
+
+  return { stream: proc.stdout as Readable, proc };
+}
+
+// ── Queue advancement (serialized per guild) ─────────────────────────────────
+async function playNext(guildId: string): Promise<void> {
+  const state = states.get(guildId);
+  if (!state || state.advancing) return;
+  state.advancing = true;
 
   try {
-    const { stream, type } = await getStream(next.url);
-    const resource = createAudioResource(stream, { inputType: type });
-    state.player.play(resource);
-    if (state.textChannel?.isTextBased()) {
-      await (state.textChannel as TextChannel).send(
-        `▶ Now playing: **${next.title}**`,
-      );
+    killProc(state); // terminate previous track's yt-dlp, if any
+
+    const next = state.queue.shift();
+    if (!next) {
+      teardown(guildId);
+      return;
     }
-  } catch (err) {
-    logger.error({ err, song: next.title }, "Failed to stream song, skipping");
-    await playNext(guildId);
+
+    state.currentSong = next;
+
+    try {
+      const { stream, proc } = getStream(next.url);
+      state.currentProc = proc;
+      const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary });
+      state.player.play(resource);
+    } catch (err) {
+      logger.error({ err, song: next.title }, "Failed to stream song, skipping");
+      state.advancing = false;
+      await playNext(guildId);
+      return;
+    }
+
+    // Announcement is best-effort — never let a send failure affect playback
+    if (state.textChannel?.isTextBased()) {
+      (state.textChannel as TextChannel)
+        .send(`▶ Now playing: **${next.title}**`)
+        .catch(() => {});
+    }
+  } finally {
+    const s = states.get(guildId);
+    if (s) s.advancing = false;
   }
 }
 
+// ── Public service ───────────────────────────────────────────────────────────
 export function getMusicService() {
   return {
     getState(guildId: string): GuildMusicState | undefined {
@@ -118,15 +182,14 @@ export function getMusicService() {
       voiceChannel: VoiceChannel | StageChannel,
       textChannel: TextBasedChannel,
     ): Promise<{ title: string; queued: boolean }> {
-      // Resolve song metadata
       let url = query;
       let title = query;
 
       const isUrl = /^https?:\/\//.test(query);
       if (isUrl) {
         try {
-          const info = await ytdl.getBasicInfo(url, ytdlAgent ? { agent: ytdlAgent } : {});
-          title = info.videoDetails.title;
+          const info = await playdl.video_info(url);
+          title = info.video_details?.title ?? query;
         } catch {
           title = query;
         }
@@ -155,6 +218,8 @@ export function getMusicService() {
 
         connection.subscribe(state.player);
 
+        // Single advancement path: only Idle advances the queue.
+        // (The player emits Idle after errors too, so no advance in the error handler.)
         state.player.on(AudioPlayerStatus.Idle, () => {
           playNext(guildId).catch((err) =>
             logger.error({ err }, "Error advancing queue"),
@@ -162,26 +227,21 @@ export function getMusicService() {
         });
 
         state.player.on("error", (err) => {
-          logger.error({ err }, "Audio player error, skipping");
-          playNext(guildId).catch(() => {});
+          logger.error({ err }, "Audio player error");
         });
 
-        // Disconnect listener — clean up state if connection drops externally
         connection.on(VoiceConnectionStatus.Disconnected, async () => {
           try {
-            // Give Discord 5s to reconnect before giving up
             await entersState(connection, VoiceConnectionStatus.Ready, 5_000);
           } catch {
-            connection.destroy();
-            states.delete(guildId);
+            teardown(guildId);
           }
         });
 
         try {
           await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
         } catch {
-          connection.destroy();
-          states.delete(guildId);
+          teardown(guildId);
           throw new Error("Could not connect to voice channel.");
         }
       }
@@ -197,17 +257,13 @@ export function getMusicService() {
     },
 
     stop(guildId: string): void {
-      const state = states.get(guildId);
-      if (!state) return;
-      state.queue = [];
-      state.player.stop(true);
-      state.connection?.destroy();
-      states.delete(guildId);
+      teardown(guildId);
     },
 
     skip(guildId: string): boolean {
       const state = states.get(guildId);
       if (!state?.currentSong) return false;
+      // Stopping the player triggers Idle → playNext, which kills the old proc
       state.player.stop();
       return true;
     },
