@@ -22,11 +22,14 @@ runs:
       with:
         fetch-depth: 0
 
-    - name: Setup runtime
+    - name: Install dependencies
       shell: bash
       run: |
-        sudo apt-get update -y
-        sudo apt-get install -y jq git
+        if ! command -v jq >/dev/null 2>&1; then
+          if command -v apt-get >/dev/null 2>&1; then
+            sudo apt-get update -y && sudo apt-get install -y jq git
+          fi
+        fi
 
     - name: Run discord notify script
       shell: bash

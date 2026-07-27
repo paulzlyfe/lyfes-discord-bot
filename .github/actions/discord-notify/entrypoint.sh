@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 trap 'rc=$?; echo "::error::Command failed at line ${LINENO} with exit code ${rc}"; exit $rc' ERR
 
 WEBHOOK="${WEBHOOK:-}"

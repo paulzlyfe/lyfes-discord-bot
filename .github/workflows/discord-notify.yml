@@ -1,23 +1,16 @@
-name: Discord Notify (Production)
-
+name: Discord Notify
 on:
   push:
-    branches: [ main, 'release/*' ]
+    branches: [ main ]
   pull_request:
-    types: [opened, reopened, closed, synchronized]
+    types: [opened, reopened, closed, synchronize]
   release:
     types: [published]
-  issues:
-    types: [opened, edited, closed]
-
 jobs:
   notify:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      checks: read
     steps:
-      - name: Run Discord notify action
+      - name: Run Discord Notify Action
         uses: ./.github/actions/discord-notify
         with:
-          max-embed-chars: '6000'
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
