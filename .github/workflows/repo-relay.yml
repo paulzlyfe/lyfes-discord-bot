@@ -1,4 +1,4 @@
-name: Discord Push Notify
+name: Discord Push Notify with Avatars
 
 on:
   push:
@@ -9,51 +9,81 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
+    env:
+      WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      REPO: ${{ github.repository }}
+      REPO_URL: https://github.com/${{ github.repository }}
+      REPO_OWNER: ${{ github.repository_owner }}
+      ACTOR: ${{ github.actor }}
+      ACTOR_AVATAR: https://github.com/${{ github.actor }}.png
+      OWNER_AVATAR: https://github.com/${{ github.repository_owner }}.png
+      COMMIT_URL: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
     steps:
-      - name: Build push payload and send to Discord
-        env:
-          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          REPO: ${{ github.repository }}
-          REF: ${{ github.ref }}
-          Pusher: ${{ github.actor }}
-          COMMIT_SHA: ${{ github.sha }}
-          COMMIT_URL: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+      - name: Validate webhook secret
         run: |
           if [ -z "$WEBHOOK" ]; then
             echo "DISCORD_WEBHOOK secret not set"
             exit 1
           fi
 
-          # Collect up to 5 commit messages
+      - name: Build and send Discord embed
+        shell: bash
+        run: |
+          # Read event payload
+          EVENT="$GITHUB_EVENT_PATH"
+
+          # Branch name
+          BRANCH=${GITHUB_REF#refs/heads/}
+
+          # Build commit list (max 6)
           commits=""
           count=0
-          for sha in $(jq -r '.commits[].id' < "$GITHUB_EVENT_PATH"); do
-            msg=$(jq -r --arg s "$sha" '.commits[] | select(.id==$s) | .message' < "$GITHUB_EVENT_PATH" | head -n1)
-            author=$(jq -r --arg s "$sha" '.commits[] | select(.id==$s) | .author.name' < "$GITHUB_EVENT_PATH" | head -n1)
-            short=${sha:0:7}
-            commits="$commits• [$short](https://github.com/$REPO/commit/$sha) — $msg ($author)\n"
-            count=$((count+1))
-            [ $count -ge 5 ] && break
-          done
-
-          # Fallback if no commits parsed (safety)
-          if [ -z "$commits" ]; then
-            commits="• $COMMIT_SHA — $COMMIT_URL"
+          if jq -e '.commits' "$EVENT" >/dev/null 2>&1; then
+            for sha in $(jq -r '.commits[].id' < "$EVENT"); do
+              short=${sha:0:7}
+              msg=$(jq -r --arg s "$sha" '.commits[] | select(.id==$s) | .message' < "$EVENT" | head -n1)
+              author_name=$(jq -r --arg s "$sha" '.commits[] | select(.id==$s) | .author.name' < "$EVENT" | head -n1)
+              # If author username exists, try to use their GitHub avatar; otherwise fallback to actor avatar
+              author_username=$(jq -r --arg s "$sha" '.commits[] | select(.id==$s) | .author.username' < "$EVENT" | head -n1)
+              if [ "$author_username" != "null" ] && [ -n "$author_username" ]; then
+                author_avatar="https://github.com/${author_username}.png"
+              else
+                author_avatar="$ACTOR_AVATAR"
+              fi
+              commits="${commits}• [\`${short}\`](${REPO_URL}/commit/${sha}) — ${msg} — *${author_name}*\n"
+              count=$((count+1))
+              [ $count -ge 6 ] && break
+            done
           fi
 
-          branch=${REF#refs/heads/}
-          title="Push to ${branch} in ${REPO}"
-          description="Pusher: **${Pusher}**\n\n${commits}"
+          # Fallback if no commits parsed
+          if [ -z "$commits" ]; then
+            commits="• [\`${GITHUB_SHA:0:7}\`](${COMMIT_URL})"
+          fi
 
-          payload=$(jq -n --arg t "$title" --arg d "$description" '{
-            embeds: [
-              {
-                title: $t,
-                description: $d,
-                color: 3066993,
-                url: $ENV.COMMIT_URL
-              }
-            ]
-          }')
+          title="Push to ${BRANCH} in ${REPO}"
+          description="**Pusher:** ${ACTOR}\n\n${commits}"
 
-          curl -s -H "Content-Type: application/json" -d "$payload" "$WEBHOOK"
+          # Build embed JSON using jq for safe escaping
+          payload=$(jq -n --arg title "$title" \
+                          --arg desc "$description" \
+                          --arg url "$COMMIT_URL" \
+                          --arg actor "$ACTOR" \
+                          --arg actor_avatar "$ACTOR_AVATAR" \
+                          --arg owner_avatar "$OWNER_AVATAR" \
+                          '{
+                            embeds: [
+                              {
+                                title: $title,
+                                description: $desc,
+                                url: $url,
+                                color: 3066993,
+                                author: { name: $actor, icon_url: $actor_avatar },
+                                thumbnail: { url: $owner_avatar },
+                                footer: { text: "Repository: " + ($title | split(" in ") | .[1]), icon_url: $owner_avatar }
+                              }
+                            ]
+                          }')
+
+          # Send to Discord
+          curl -s -H "Content-Type: application/json" -d "$payload" "$WEBHOOK" >/dev/null
