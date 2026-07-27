@@ -68,9 +68,12 @@ interface GuildMusicState {
   textChannel: TextBasedChannel | null;
   currentProc: ChildProcess | null;
   advancing: boolean;
+  idleTimer: ReturnType<typeof setTimeout> | null;
 }
 
 const states = new Map<string, GuildMusicState>();
+
+const IDLE_LEAVE_MS = 30_000; // leave after 30s of silence
 
 function createState(): GuildMusicState {
   return {
@@ -81,6 +84,7 @@ function createState(): GuildMusicState {
     textChannel: null,
     currentProc: null,
     advancing: false,
+    idleTimer: null,
   };
 }
 
