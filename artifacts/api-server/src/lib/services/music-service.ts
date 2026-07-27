@@ -1,5 +1,5 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import { writeFileSync, mkdtempSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Readable } from "node:stream";
@@ -104,6 +104,12 @@ function teardown(guildId: string): void {
 }
 
 // ── Streaming via yt-dlp ─────────────────────────────────────────────────────
+// Prefer the up-to-date standalone binary in ./bin (downloaded from GitHub
+// releases); the Nix-installed yt-dlp is too old for current YouTube.
+const YTDLP_BIN = existsSync(join(process.cwd(), "bin", "yt-dlp"))
+  ? join(process.cwd(), "bin", "yt-dlp")
+  : "yt-dlp";
+
 function getStream(url: string): { stream: Readable; proc: ChildProcess } {
   const args = [
     "-f", "bestaudio/best",
@@ -111,10 +117,12 @@ function getStream(url: string): { stream: Readable; proc: ChildProcess } {
     "--no-playlist",
     "--quiet",
     "--no-warnings",
+    // Node solves YouTube's JS signature challenges (EJS)
+    "--js-runtimes", "node",
     ...(cookieFile ? ["--cookies", cookieFile] : []),
     url,
   ];
-  const proc = spawn("yt-dlp", args, { stdio: ["ignore", "pipe", "pipe"] });
+  const proc = spawn(YTDLP_BIN, args, { stdio: ["ignore", "pipe", "pipe"] });
 
   let stderr = "";
   proc.stderr!.on("data", (d: Buffer) => { stderr += d.toString(); });
