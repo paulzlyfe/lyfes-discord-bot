@@ -1,0 +1,202 @@
+name: Discord Notify (Production)
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/*'
+  pull_request:
+    types: [opened, reopened, closed, synchronized]
+  release:
+    types: [published]
+  issues:
+    types: [opened, edited, closed]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Validate webhook secret
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "::error::DISCORD_WEBHOOK secret not set or empty"
+            exit 10
+          fi
+          echo "DISCORD_WEBHOOK is set (hidden)."
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+
+      - name: Build and send Discord payload
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          REPO: ${{ github.repository }}
+          REPO_URL: https://github.com/${{ github.repository }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          ACTOR: ${{ github.actor }}
+          ACTOR_AVATAR: https://github.com/${{ github.actor }}.png
+          OWNER_AVATAR: https://github.com/${{ github.repository_owner }}.png
+          MAX_EMBED_CHARS: 6000
+          MAX_COMMIT_LINES: 6
+          MAX_COMMIT_MSG_LEN: 200
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          EVENT_FILE="$GITHUB_EVENT_PATH"
+          EVENT_NAME="$GITHUB_EVENT_NAME"
+          BRANCH=${GITHUB_REF#refs/heads/}
+
+          if [ ! -f "$EVENT_FILE" ]; then
+            echo "::error::GITHUB_EVENT_PATH ($EVENT_FILE) not found"
+            exit 11
+          fi
+
+          # Helpers
+          shorten() {
+            local s="$1"
+            local max=$2
+            if [ ${#s} -le $max ]; then
+              printf "%s" "$s"
+            else
+              printf "%s..." "${s:0:$((max-3))}"
+            fi
+          }
+
+          safe_json_escape() {
+            jq -Rs '.' <<<"$1"
+          }
+
+          # Build event-specific content
+          title=""
+          description=""
+          thumbnail="$OWNER_AVATAR"
+          author_name="$ACTOR"
+          author_icon="$ACTOR_AVATAR"
+          url="$REPO_URL"
+
+          case "$EVENT_NAME" in
+            push)
+              title="Push to ${BRANCH} in ${REPO}"
+
+              commits_count=$(jq -r 'if .commits then (.commits|length) else 0 end' "$EVENT_FILE")
+              commits_md=""
+              if [ "$commits_count" -gt 0 ]; then
+                for i in $(seq 0 $((commits_count-1))); do
+                  sha=$(jq -r --argjson idx "$i" '.commits[$idx].id // empty' --argjson idx "$i" "$EVENT_FILE")
+                  [ -z "$sha" ] && continue
+                  short=${sha:0:7}
+                  msg=$(jq -r --argjson idx "$i" '.commits[$idx].message // "<no message>"' --argjson idx "$i" "$EVENT_FILE" | tr '\n' ' ')
+                  msg=$(shorten "$msg" $MAX_COMMIT_MSG_LEN)
+                  author_name_commit=$(jq -r --argjson idx "$i" '.commits[$idx].author.name // .commits[$idx].author.username // "unknown"' --argjson idx "$i" "$EVENT_FILE")
+                  author_username=$(jq -r --argjson idx "$i" '.commits[$idx].author.username // empty' --argjson idx "$i" "$EVENT_FILE")
+                  if [ -n "$author_username" ] && [ "$author_username" != "null" ]; then
+                    author_avatar_commit="https://github.com/${author_username}.png"
+                  else
+                    author_avatar_commit="$ACTOR_AVATAR"
+                  fi
+                  commits_md+="• [\`${short}\`](${REPO_URL}/commit/${sha}) — ${msg} — *${author_name_commit}*\n"
+                  # limit lines
+                  lines=$(echo -n "$commits_md" | grep -c '• ' || true)
+                  if [ "$lines" -ge $MAX_COMMIT_LINES ]; then
+                    break
+                  fi
+                done
+              fi
+
+              if [ -z "$commits_md" ]; then
+                commits_md="• [\`${GITHUB_SHA:0:7}\`](${REPO_URL}/commit/${GITHUB_SHA})"
+              fi
+
+              description="**Pusher:** ${ACTOR}\n\n${commits_md}"
+              ;;
+
+            pull_request)
+              pr_action=$(jq -r '.action' "$EVENT_FILE")
+              pr_number=$(jq -r '.pull_request.number' "$EVENT_FILE")
+              pr_title=$(jq -r '.pull_request.title' "$EVENT_FILE" | tr '\n' ' ')
+              pr_user=$(jq -r '.pull_request.user.login' "$EVENT_FILE")
+              pr_url=$(jq -r '.pull_request.html_url' "$EVENT_FILE")
+              title="PR #${pr_number} ${pr_action}: ${pr_title}"
+              description="**Author:** ${pr_user}\n**Action:** ${pr_action}\n[View PR](${pr_url})"
+              author_name="$pr_user"
+              author_icon="https://github.com/${pr_user}.png"
+              url="$pr_url"
+              ;;
+
+            release)
+              rel_action=$(jq -r '.action' "$EVENT_FILE")
+              rel_tag=$(jq -r '.release.tag_name' "$EVENT_FILE")
+              rel_name=$(jq -r '.release.name // ""' "$EVENT_FILE")
+              rel_url=$(jq -r '.release.html_url' "$EVENT_FILE")
+              title="Release ${rel_tag} ${rel_name}"
+              description="[View release](${rel_url})"
+              url="$rel_url"
+              ;;
+
+            issues)
+              issue_action=$(jq -r '.action' "$EVENT_FILE")
+              issue_number=$(jq -r '.issue.number' "$EVENT_FILE")
+              issue_title=$(jq -r '.issue.title' "$EVENT_FILE" | tr '\n' ' ')
+              issue_user=$(jq -r '.issue.user.login' "$EVENT_FILE")
+              issue_url=$(jq -r '.issue.html_url' "$EVENT_FILE")
+              title="Issue #${issue_number} ${issue_action}: ${issue_title}"
+              description="**Author:** ${issue_user}\n**Action:** ${issue_action}\n[View issue](${issue_url})"
+              author_name="$issue_user"
+              author_icon="https://github.com/${issue_user}.png"
+              url="$issue_url"
+              ;;
+
+            *)
+              echo "::warning::Unhandled event: $EVENT_NAME"
+              exit 0
+              ;;
+          esac
+
+          # Build embed and cap size
+          embed=$(jq -n --arg t "$title" --arg d "$description" --arg u "$url" --arg an "$author_name" --arg ai "$author_icon" --arg th "$thumbnail" '{
+            title: $t,
+            description: $d,
+            url: $u,
+            color: 3066993,
+            author: { name: $an, icon_url: $ai },
+            thumbnail: { url: $th }
+          }')
+
+          # Ensure embed length under MAX_EMBED_CHARS
+          embed_len=$(echo -n "$embed" | wc -c)
+          if [ "$embed_len" -gt "$MAX_EMBED_CHARS" ]; then
+            echo "::warning::Embed size ($embed_len) exceeds limit ($MAX_EMBED_CHARS). Truncating description."
+            # Truncate description safely
+            short_desc=$(shorten "$description" 1000)
+            embed=$(jq -n --arg t "$title" --arg d "$short_desc" --arg u "$url" --arg an "$author_name" --arg ai "$author_icon" --arg th "$thumbnail" '{ title: $t, description: $d, url: $u, color: 3066993, author: { name: $an, icon_url: $ai }, thumbnail: { url: $th } }')
+          fi
+
+          payload=$(jq -n --argjson e "$embed" '{embeds: [$e]}')
+
+          # Final payload size check
+          payload_len=$(echo -n "$payload" | wc -c)
+          if [ "$payload_len" -gt 1900 ]; then
+            echo "::warning::Payload size ($payload_len) is large; Discord may reject it. Trimming further."
+            # Reduce commit lines to 3 and shorten messages
+            description=$(echo "$description" | sed -n '1,200p')
+            embed=$(jq -n --arg t "$title" --arg d "$description" --arg u "$url" --arg an "$author_name" --arg ai "$author_icon" --arg th "$thumbnail" '{ title: $t, description: $d, url: $u, color: 3066993, author: { name: $an, icon_url: $ai }, thumbnail: { url: $th } }')
+            payload=$(jq -n --argjson e "$embed" '{embeds: [$e]}')
+          fi
+
+          echo "Payload size: $(echo -n "$payload" | wc -c) bytes"
+
+          http_status=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -d "$payload" "$WEBHOOK" || true)
+          echo "Discord webhook HTTP status: $http_status"
+          if [ "$http_status" -ge 200 ] && [ "$http_status" -lt 300 ]; then
+            echo "Message posted successfully."
+          else
+            echo "::error::Discord webhook returned HTTP status $http_status"
+            exit 13
+          fi
