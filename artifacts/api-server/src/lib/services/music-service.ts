@@ -14,6 +14,33 @@ import ytdl from "@distube/ytdl-core";
 import { logger } from "../logger";
 import type { TextBasedChannel } from "discord.js";
 
+// Build a cookie-authenticated agent once at startup so all ytdl calls share it.
+// YOUTUBE_COOKIE is the raw "cookie:" request header value copied from DevTools.
+function buildAgent(): ReturnType<typeof ytdl.createAgent> | undefined {
+  const raw = process.env["YOUTUBE_COOKIE"];
+  if (!raw) return undefined;
+  try {
+    // Parse "name=value; name2=value2; ..." into the array createAgent expects
+    const cookies = raw
+      .split(";")
+      .map((pair) => pair.trim())
+      .filter(Boolean)
+      .map((pair) => {
+        const eq = pair.indexOf("=");
+        return eq === -1
+          ? null
+          : { name: pair.slice(0, eq).trim(), value: pair.slice(eq + 1).trim() };
+      })
+      .filter((c): c is { name: string; value: string } => c !== null);
+    return ytdl.createAgent(cookies);
+  } catch (err) {
+    logger.warn({ err }, "Failed to build YouTube cookie agent — playing without auth");
+    return undefined;
+  }
+}
+
+const ytdlAgent = buildAgent();
+
 interface Song {
   title: string;
   url: string;
@@ -40,11 +67,11 @@ function createState(): GuildMusicState {
 }
 
 async function getStream(url: string): Promise<{ stream: Readable; type: StreamType }> {
-  // Use ytdl-core to get an audio-only stream — reliable against current YouTube
   const stream = ytdl(url, {
     filter: "audioonly",
     quality: "highestaudio",
-    highWaterMark: 1 << 25, // 32 MB buffer — prevents stuttering on slower pipes
+    highWaterMark: 1 << 25,
+    ...(ytdlAgent ? { agent: ytdlAgent } : {}),
   }) as unknown as Readable;
   return { stream, type: StreamType.Arbitrary };
 }
@@ -98,7 +125,7 @@ export function getMusicService() {
       const isUrl = /^https?:\/\//.test(query);
       if (isUrl) {
         try {
-          const info = await ytdl.getBasicInfo(url);
+          const info = await ytdl.getBasicInfo(url, ytdlAgent ? { agent: ytdlAgent } : {});
           title = info.videoDetails.title;
         } catch {
           title = query;
