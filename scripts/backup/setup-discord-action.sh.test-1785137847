@@ -1,9 +1,97 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
+BRANCH="discord-notify/centralize-action"
+PR_TITLE="chore: centralize discord notify logic into composite action"
+PR_BODY="Centralize Discord notify logic into a composite action and entrypoint script.
+
+This change:
+- Adds .github/actions/discord-notify/action.yml (composite action)
+- Adds .github/actions/discord-notify/entrypoint.sh (executable script)
+- Replaces .github/workflows/discord-notify.yml with a minimal workflow that calls the action
+
+Secrets required: DISCORD_WEBHOOK (required), optional DISCORD_BOT_TOKEN and DISCORD_CHANNEL_ID for thread creation. GITHUB_TOKEN is used for check-run lookups when available.
+
+Testing steps:
+1. Run the workflow on a test branch and inspect logs.
+2. Check the action logs for /tmp/discord_resp when Discord rejects payloads.
+
+Rollback: revert this branch or restore previous workflow file."
+
+# Ensure we're in a git repo
+if [ ! -d .git ]; then
+  echo "Error: this directory does not look like a git repository. Run this script from your repo root."
+  exit 1
+fi
+
+# Create branch
+git checkout -b "$BRANCH"
+
+# Create action directory
+mkdir -p .github/actions/discord-notify
+
+# Write action.yml
+cat > .github/actions/discord-notify/action.yml <<'YAML'
+name: Discord Notify Action
+description: Post GitHub events to Discord with idempotency, diffs, check-run links, and thread support.
+inputs:
+  webhook:
+    description: 'Discord webhook URL (or leave empty to use DISCORD_WEBHOOK secret)'
+    required: false
+  bot-token:
+    description: 'Optional Discord bot token for thread creation'
+    required: false
+  channel-id:
+    description: 'Optional Discord channel id for thread creation'
+    required: false
+  max-embed-chars:
+    description: 'Max embed size'
+    required: false
+    default: '6000'
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup runtime
+      shell: bash
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y jq git
+
+    - name: Run discord notify script
+      shell: bash
+      env:
+        WEBHOOK: ${{ inputs.webhook || secrets.DISCORD_WEBHOOK }}
+        BOT_TOKEN: ${{ inputs.bot-token || secrets.DISCORD_BOT_TOKEN }}
+        CHANNEL_ID: ${{ inputs.channel-id || secrets.DISCORD_CHANNEL_ID }}
+        REPO: ${{ github.repository }}
+        REPO_URL: https://github.com/${{ github.repository }}
+        GITHUB_EVENT_PATH: ${{ github.event_path }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_REF: ${{ github.ref }}
+        GITHUB_ACTOR: ${{ github.actor }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        MAX_EMBED_CHARS: ${{ inputs.max-embed-chars }}
+      run: |
+        mkdir -p /tmp/discord-action
+        cp "${{ github.action_path }}/entrypoint.sh" /tmp/discord-action/entrypoint.sh || true
+        chmod +x /tmp/discord-action/entrypoint.sh
+        /tmp/discord-action/entrypoint.sh
+YAML
+
+# Write entrypoint.sh
+cat > .github/actions/discord-notify/entrypoint.sh <<'BASH'
+#!/usr/bin/env bash
+set -euo pipefail
+
 trap 'rc=$?; echo "::error::Command failed at line ${LINENO} with exit code ${rc}"; exit $rc' ERR
 
 WEBHOOK="${WEBHOOK:-}"
-USE_BOT="${USE_BOT:-false}"
 BOT_TOKEN="${BOT_TOKEN:-}"
 CHANNEL_ID="${CHANNEL_ID:-}"
 REPO="${REPO:-}"
@@ -20,21 +108,14 @@ MAX_COMMIT_LINES="${MAX_COMMIT_LINES:-6}"
 MAX_FILE_LIST="${MAX_FILE_LIST:-20}"
 MAX_DIFF_BYTES="${MAX_DIFF_BYTES:-5000}"
 
-if [ "${USE_BOT,,}" != "true" ] && [ -z "$WEBHOOK" ]; then
-  echo "::error::DISCORD_WEBHOOK not provided and use-bot is not enabled"
+if [ -z "$WEBHOOK" ]; then
+  echo "::error::DISCORD_WEBHOOK not provided"
   exit 10
 fi
-
-if [ "${USE_BOT,,}" = "true" ] && ( [ -z "$BOT_TOKEN" ] || [ -z "$CHANNEL_ID" ] ); then
-  echo "::error::BOT_TOKEN or CHANNEL_ID missing for bot mode"
-  exit 20
-fi
-
 if ! command -v jq >/dev/null 2>&1; then
   echo "::error::jq not installed"
   exit 11
 fi
-
 if [ ! -f "$EVENT_FILE" ]; then
   echo "::error::GITHUB_EVENT_PATH ($EVENT_FILE) not found"
   exit 12
@@ -143,26 +224,8 @@ payload=$(jq -n --argjson e "$embed" '{embeds: [$e]}')
 payload_len=$(echo -n "$payload" | wc -c)
 echo "Payload size: ${payload_len} bytes"
 
-send_via_webhook() {
-  curl -s -o /tmp/discord_resp -w "%{http_code}" \
-    -H "Content-Type: application/json" -d "$payload" "$WEBHOOK" || true
-}
-
-send_via_bot() {
-  curl -s -o /tmp/discord_resp -w "%{http_code}" \
-    -H "Authorization: Bot ${BOT_TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d "$payload" "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages" || true
-}
-
-if [ "${USE_BOT,,}" = "true" ]; then
-  http_code=$(send_via_bot)
-  echo "Discord bot HTTP status: $http_code"
-else
-  http_code=$(send_via_webhook)
-  echo "Discord webhook HTTP status: $http_code"
-fi
-
+http_code=$(curl -s -o /tmp/discord_resp -w "%{http_code}" -H "Content-Type: application/json" -d "$payload" "$WEBHOOK" || true)
+echo "Discord webhook HTTP status: $http_code"
 if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
   echo "Message posted successfully."
   message_id=$(jq -r '.id // empty' /tmp/discord_resp || true)
@@ -180,7 +243,54 @@ if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
     fi
   fi
 else
-  echo "::error::Discord webhook/bot returned HTTP status $http_code"
+  echo "::error::Discord webhook returned HTTP status $http_code"
   head -c 4000 /tmp/discord_resp || true
   exit 30
 fi
+BASH
+
+# Make entrypoint executable
+chmod +x .github/actions/discord-notify/entrypoint.sh
+
+# Replace workflow file
+mkdir -p .github/workflows
+cat > .github/workflows/discord-notify.yml <<'YAML'
+name: Discord Notify (Production)
+
+on:
+  push:
+    branches: [ main, 'release/*' ]
+  pull_request:
+    types: [opened, reopened, closed, synchronized]
+  release:
+    types: [published]
+  issues:
+    types: [opened, edited, closed]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
+    steps:
+      - name: Run Discord notify action
+        uses: ./.github/actions/discord-notify
+        with:
+          max-embed-chars: '6000'
+YAML
+
+# Commit and push
+git add .github/actions/discord-notify/action.yml .github/actions/discord-notify/entrypoint.sh .github/workflows/discord-notify.yml
+git commit -m "chore: centralize discord notify logic into composite action"
+git push --set-upstream origin "$BRANCH"
+
+# Create PR if gh CLI is available
+if command -v gh >/dev/null 2>&1; then
+  gh pr create --title "$PR_TITLE" --body "$PR_BODY" --base main
+  echo "PR created."
+else
+  echo "gh CLI not found; branch pushed. Create a PR from $BRANCH to main manually."
+fi
+
+echo "Done. Review the PR and run the workflow on a test branch first."
