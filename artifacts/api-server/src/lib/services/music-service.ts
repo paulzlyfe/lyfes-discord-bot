@@ -147,12 +147,22 @@ async function playNext(guildId: string): Promise<void> {
   if (!state || state.advancing) return;
   state.advancing = true;
 
+  // Clear any pending idle-leave timer since we're about to play
+  if (state.idleTimer) { clearTimeout(state.idleTimer); state.idleTimer = null; }
+
   try {
-    killProc(state); // terminate previous track's yt-dlp, if any
+    killProc(state);
 
     const next = state.queue.shift();
     if (!next) {
-      teardown(guildId);
+      // Queue empty — wait 30s before leaving so user can queue another song
+      state.currentSong = null;
+      if (state.textChannel?.isTextBased()) {
+        (state.textChannel as TextChannel)
+          .send("✅ Queue finished. Leaving in 30 seconds unless you add more songs.")
+          .catch(() => {});
+      }
+      state.idleTimer = setTimeout(() => teardown(guildId), IDLE_LEAVE_MS);
       return;
     }
 
@@ -161,16 +171,41 @@ async function playNext(guildId: string): Promise<void> {
     try {
       const { stream, proc } = getStream(next.url);
       state.currentProc = proc;
+
+      // ── Detect silent yt-dlp failures and report them to Discord ──────────
+      let gotData = false;
+      stream.once("data", () => { gotData = true; });
+
+      let stderrBuf = "";
+      proc.stderr!.on("data", (d: Buffer) => { stderrBuf += d.toString(); });
+
+      proc.once("close", (code) => {
+        if (code !== 0 || !gotData) {
+          const snippet = stderrBuf.slice(-300).replace(/\n/g, " ").trim();
+          logger.error({ code, stderr: snippet }, "yt-dlp failed to stream");
+          const s = states.get(guildId);
+          if (s?.textChannel?.isTextBased()) {
+            (s.textChannel as TextChannel)
+              .send(`❌ Could not stream **${next.title}**.\n\`\`\`${snippet || "no output"}\`\`\``)
+              .catch(() => {});
+          }
+        }
+      });
+
       const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary });
       state.player.play(resource);
     } catch (err) {
       logger.error({ err, song: next.title }, "Failed to stream song, skipping");
+      if (state.textChannel?.isTextBased()) {
+        (state.textChannel as TextChannel)
+          .send(`❌ Error starting **${next.title}**, skipping.`)
+          .catch(() => {});
+      }
       state.advancing = false;
       await playNext(guildId);
       return;
     }
 
-    // Announcement is best-effort — never let a send failure affect playback
     if (state.textChannel?.isTextBased()) {
       (state.textChannel as TextChannel)
         .send(`▶ Now playing: **${next.title}**`)
