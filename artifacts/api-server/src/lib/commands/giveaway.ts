@@ -34,6 +34,12 @@ export const giveawayCommands = [
             .setMinValue(1)
             .setMaxValue(10)
             .setRequired(false),
+        )
+        .addRoleOption((o) =>
+          o
+            .setName("ping-role")
+            .setDescription("Role to ping when this giveaway starts (overrides server default)")
+            .setRequired(false),
         ),
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
@@ -136,6 +142,7 @@ export async function handleGiveaway(
     const prize = interaction.options.getString("prize", true);
     const durationStr = interaction.options.getString("duration", true);
     const winnerCount = interaction.options.getInteger("winners") ?? 1;
+    const inlinePingRole = interaction.options.getRole("ping-role");
     const ms = parseDuration(durationStr);
     if (!ms) {
       await interaction.reply({ content: "Invalid duration. Use format like `10m`, `1h`, `2d`.", ephemeral: true });
@@ -143,8 +150,13 @@ export async function handleGiveaway(
     }
 
     const endsAt = new Date(Date.now() + ms);
-    const [settings] = await db.select().from(guildSettingsTable).where(eq(guildSettingsTable.guildId, guild.id));
-    const pingRoleId = settings?.giveawayPingRoleId;
+
+    // Inline role takes priority; fall back to guild-wide default
+    let pingRoleId = inlinePingRole?.id ?? null;
+    if (!pingRoleId) {
+      const [settings] = await db.select().from(guildSettingsTable).where(eq(guildSettingsTable.guildId, guild.id));
+      pingRoleId = settings?.giveawayPingRoleId ?? null;
+    }
 
     await interaction.deferReply();
 
